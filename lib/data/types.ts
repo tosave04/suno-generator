@@ -44,7 +44,7 @@ export interface WritingStyleData {
 export interface SunoTag {
   tag: string;
   description: string;
-  category: "structure" | "vocal" | "instrumental" | "delivery";
+  category: "structure" | "instrumental" | "delivery" | "metatag";
   usage: string;
 }
 

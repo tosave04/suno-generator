@@ -19,7 +19,7 @@ export function GenreSelector({ value, onChange }: GenreSelectorProps) {
   return (
     <div className="space-y-2">
       <label className="text-xs font-medium text-muted-foreground">Genre musical</label>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
         {GENRES.map((genre) => {
           const isSelected = value === genre.id;
           return (

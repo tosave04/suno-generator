@@ -11,7 +11,7 @@
 | **Phase 0** | Fondations | ✅ Terminée | Stack, BDD, structure |
 | **Phase 1** | Données musicales | ✅ Terminée | Corpus de genres, moods, styles |
 | **Phase 2** | Interface de composition | ✅ Terminée | UI principale + sélecteurs |
-| **Phase 3** | Génération IA | 🟢 En cours | Context Builder + DeepSeek |
+| **Phase 3** | Génération IA | ✅ Terminée | Context Builder + DeepSeek |
 | **Phase 4** | Historique & favoris | ⬜ À faire | Sidebar, filtres, favoris |
 | **Phase 5** | Upload audio | ⬜ À faire | Upload MP3/WAV |
 | **Phase 6** | Polish & Stats | ⬜ À faire | Statistiques, UX, tests |
@@ -59,8 +59,8 @@
 - [x] Créer `lib/data/styles.ts` — 6 styles d'écriture avec :
   - Règles de rédaction, exemples de patterns
   - Conseils de formatage Suno
-- [x] Créer `lib/data/suno-tags.ts` — Référence complète des tags Suno 2026 (22 tags, 4 catégories)
-- [x] Créer `lib/data/music-rules.ts` — Règles transversales (théorie musicale, 22 règles)
+- [x] Créer `lib/data/suno-tags.ts` — Référence complète des tags Suno 2026 (tags structure + delivery + metatags créatifs + vocables non-lexicaux)
+- [x] Créer `lib/data/music-rules.ts` — Règles transversales (théorie musicale, 25 règles)
 - [x] Tests unitaires pour la cohérence des données (18 tests, tous passent)
 
 **Livrable :** Corpus complet exploitable par le Context Builder.
@@ -91,21 +91,23 @@
 
 ---
 
-## Phase 3 — Génération IA
+## Phase 3 — Génération IA ✅ *Terminée*
 
 **Objectif :** Intégrer le Context Builder et l'API DeepSeek pour générer lyrics et prompts.
 
-- [ ] Créer `lib/services/context-builder.ts` — Assemblage du contexte
-- [ ] Créer `lib/services/deepseek.ts` — Client API DeepSeek
-- [ ] Créer `lib/schemas/generation.ts` — Schéma Zod de validation
-- [ ] Créer `lib/actions/generation.ts` — Server Action `createGeneration`
-- [ ] Créer `lib/utils/stats.ts` — Calcul automatique des statistiques
-- [ ] Intégrer le bouton Générer → Server Action → affichage résultat
-- [ ] Gestion des états de chargement (loading, erreur, succès)
-- [ ] Gestion des erreurs API (retry, messages utilisateur)
-- [ ] Tests : schémas Zod, Context Builder, calcul stats
+- [x] Créer `lib/schemas/generation.ts` — Schéma Zod de validation (input + réponse IA)
+- [x] Créer `lib/utils/stats.ts` — Calcul automatique des statistiques (mots, caractères, sections, durée)
+- [x] Créer `lib/services/context-builder.ts` — Assemblage du contexte (genre, mood, style, tempo, langue, tags Suno, règles musicales, format de sortie JSON)
+- [x] Créer `lib/services/deepseek.ts` — Client API DeepSeek (appel, parsing JSON, validation Zod, gestion erreurs)
+- [x] Créer `lib/actions/generation.ts` — Server Action `createGeneration` (validation → Context Builder → DeepSeek → stats → BDD → revalidatePath)
+- [x] Intégrer le bouton Générer → Server Action → affichage résultat
+- [x] Gestion des états de chargement (loading avec spinner, erreur avec message, succès avec résultat)
+- [x] Gestion des erreurs API (DeepSeekError typée, messages utilisateur clairs)
+- [x] Créer `docs/suno/` — 4 guides Suno AI (~1 200 lignes) : structure, prompts, réglages avancés
+- [x] Audit et correction des données musicales (tags Suno, structures de genres, règles de production)
+- [x] Tests : schémas Zod (5), Context Builder (6), calcul stats (8) — 28 tests ajoutés, 59 au total
 
-**Livrable :** Génération fonctionnelle de bout en bout.
+**Livrable :** Génération fonctionnelle de bout en bout, documentation Suno complète.
 
 ---
 

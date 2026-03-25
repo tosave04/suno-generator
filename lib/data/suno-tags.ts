@@ -85,7 +85,7 @@ export const SUNO_TAGS: SunoTag[] = [
   {
     tag: "(instrumental)",
     description: "Indication inline qu'une section est instrumentale.",
-    category: "vocal",
+    category: "delivery",
     usage: "Placer dans une section pour indiquer l'absence de paroles.",
   },
   {
@@ -125,16 +125,48 @@ export const SUNO_TAGS: SunoTag[] = [
     usage: "Pour les 'yeah!', 'uh!', 'let's go!' et autres vocalises libres.",
   },
   {
-    tag: "[Ad-lib]",
-    description: "Section dédiée aux improvisations vocales.",
-    category: "vocal",
-    usage: "Section complète d'ad-libs, souvent en fin de chanson.",
-  },
-  {
     tag: "[Fade Out]",
     description: "Indication de diminution progressive du volume en fin de chanson.",
     category: "structure",
     usage: "Placer comme dernière section. Le son diminue graduellement.",
+  },
+  {
+    tag: "[Drop]",
+    description: "Climax rythmique, principalement en musique électronique.",
+    category: "structure",
+    usage: "Utilisé après un build-up. Section instrumentale à haute énergie.",
+  },
+  {
+    tag: "[end]",
+    description: "Force la fin immédiate de la chanson.",
+    category: "structure",
+    usage: "Indispensable avec Extend pour empêcher Suno de continuer. Placer après [Outro].",
+  },
+
+  // --- Metatags créatifs ---
+  {
+    tag: "[laughter]",
+    description: "Génère un rire naturel dans la chanson.",
+    category: "metatag",
+    usage: "Tag expérimental. Suno interprète comme une didascalie.",
+  },
+  {
+    tag: "[piano interlude]",
+    description: "Interlude piano généré par Suno.",
+    category: "metatag",
+    usage: "Préciser l'instrument dans le tag. Fonctionne aussi avec [guitar interlude], etc.",
+  },
+  {
+    tag: "[fast rap verse]",
+    description: "Couplet rap rapide.",
+    category: "metatag",
+    usage: "Combiner style + vitesse dans le tag pour guider Suno.",
+  },
+  {
+    tag: "[slow emotional bridge]",
+    description: "Pont lent et émotionnel.",
+    category: "metatag",
+    usage: "Les tags descriptifs fonctionnent comme des 'stage directions'.",
   },
 ];
 
@@ -147,3 +179,23 @@ export const STRUCTURE_TAGS = SUNO_TAGS.filter(
 export const DELIVERY_TAGS = SUNO_TAGS.filter(
   (t) => t.category === "delivery"
 );
+
+/** Metatags créatifs (expérimentaux) */
+export const METATAGS = SUNO_TAGS.filter(
+  (t) => t.category === "metatag"
+);
+
+/**
+ * Non-lexical vocables — sons chantés sans signification.
+ * Enrichissent les transitions, post-chorus et outros.
+ */
+export const NON_LEXICAL_VOCABLES = [
+  { vocable: "oh-oh-oh", usage: "Refrains, post-chorus" },
+  { vocable: "la la la", usage: "Outros, interludes légers" },
+  { vocable: "na na na", usage: "Hooks pop/rock" },
+  { vocable: "do do do", usage: "Intros joyeuses" },
+  { vocable: "ooh / aah", usage: "Harmonies, transitions" },
+  { vocable: "hey! / ho!", usage: "Anthems, énergie collective" },
+  { vocable: "mm-mmm", usage: "Sections intimes" },
+  { vocable: "yeah! / uh!", usage: "Ad-libs hip-hop" },
+] as const;

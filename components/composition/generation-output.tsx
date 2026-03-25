@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Music } from "lucide-react";
+import type { SunoSettings } from "@/lib/actions/generation";
 
 const TABS = ["Lyrics", "Prompt +", "Prompt −", "Réglages"] as const;
 type Tab = (typeof TABS)[number];
@@ -15,25 +16,27 @@ export function GenerationOutput() {
   );
 }
 
-/** Version avec résultat (sera utilisée quand la Phase 3 sera implémentée) */
+/** Version avec résultat */
 export function GenerationResult({
+  title,
   lyrics,
   positivePrompt,
   negativePrompt,
-  advancedSettings,
+  sunoSettings,
 }: {
+  title: string;
   lyrics: string;
   positivePrompt: string;
   negativePrompt: string | null;
-  advancedSettings: Record<string, string> | null;
+  sunoSettings: SunoSettings;
 }) {
   const [activeTab, setActiveTab] = useState<Tab>("Lyrics");
 
   return (
     <div className="rounded-lg border border-border bg-muted p-4 space-y-4">
-      {/* Header */}
+      {/* Header avec titre */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-foreground">Résultat</h3>
+        <h3 className="text-lg font-semibold text-foreground">{title}</h3>
       </div>
 
       {/* Tabs */}
@@ -61,7 +64,7 @@ export function GenerationResult({
         {activeTab === "Lyrics" && <LyricsView lyrics={lyrics} />}
         {activeTab === "Prompt +" && <PromptView text={positivePrompt} />}
         {activeTab === "Prompt −" && <PromptView text={negativePrompt ?? "Aucun prompt négatif"} />}
-        {activeTab === "Réglages" && <SettingsView settings={advancedSettings} />}
+        {activeTab === "Réglages" && <SunoSettingsView settings={sunoSettings} />}
       </div>
     </div>
   );
@@ -123,19 +126,19 @@ function PromptView({ text }: { text: string }) {
   );
 }
 
-function SettingsView({ settings }: { settings: Record<string, string> | null }) {
-  if (!settings) {
-    return (
-      <p className="p-3 text-sm text-muted-foreground">Aucun réglage avancé</p>
-    );
-  }
+function SunoSettingsView({ settings }: { settings: SunoSettings }) {
+  const items = [
+    { label: "Vocal Gender", value: settings.vocalGender },
+    { label: "Weirdness", value: `${settings.weirdness}%` },
+    { label: "Style Influence", value: `${settings.styleInfluence}%` },
+  ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3">
-      {Object.entries(settings).map(([key, value]) => (
-        <div key={key} className="rounded-md bg-background p-2.5 space-y-1">
+    <div className="grid grid-cols-3 gap-3 p-3">
+      {items.map(({ label, value }) => (
+        <div key={label} className="rounded-md bg-background p-2.5 space-y-1">
           <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-            {key}
+            {label}
           </span>
           <p className="text-sm font-medium text-foreground">{value}</p>
         </div>

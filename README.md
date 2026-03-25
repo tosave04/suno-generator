@@ -2,7 +2,7 @@
 
 > Application de composition musicale assistée par IA, générant des lyrics et prompts optimisés pour [Suno](https://suno.com).
 
-**Version :** `0.3.0` · **Statut :** Phase 2 terminée · **Licence :** Privé
+**Version :** `0.4.0` · **Statut :** Phase 3 terminée · **Licence :** Privé
 
 ---
 
@@ -93,9 +93,15 @@ suno-generator/
 │   ├── ui/                 # Button, Badge
 │   └── composition/        # Sélecteurs genre, mood, style, params, prompt, output
 ├── lib/                    # Services, utilitaires, actions serveur
+│   ├── actions/            # Server Actions (génération)
+│   ├── data/               # Corpus musical (genres, moods, styles, tags, règles)
+│   ├── schemas/            # Schémas Zod de validation
+│   ├── services/           # Context Builder, client DeepSeek
+│   └── utils/              # Utilitaires (stats)
 ├── prisma/                 # Schéma Prisma & migrations
 ├── public/                 # Fichiers statiques & uploads audio
 ├── docs/                   # Documentation technique
+│   ├── suno/               # 4 guides Suno AI (bonnes pratiques)
 │   ├── SPECIFICATIONS.md   # Cahier des charges complet
 │   ├── ROADMAP.md          # Feuille de route de développement
 │   ├── TEMPLATE.md         # Charte graphique & patterns UI

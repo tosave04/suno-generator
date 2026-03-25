@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { Sparkles } from "lucide-react";
+import { useState, useTransition } from "react";
+import { Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GenreSelector } from "@/components/composition/genre-selector";
 import { MoodSelector } from "@/components/composition/mood-selector";
 import { StyleSelector } from "@/components/composition/style-selector";
 import { ParamsPanel } from "@/components/composition/params-panel";
 import { PromptInput } from "@/components/composition/prompt-input";
-import { GenerationOutput } from "@/components/composition/generation-output";
+import {
+  GenerationOutput,
+  GenerationResult,
+} from "@/components/composition/generation-output";
+import {
+  createGeneration,
+  type GenerationData,
+} from "@/lib/actions/generation";
 
 export default function CompositionPage() {
   const [genre, setGenre] = useState<string | null>(null);
@@ -19,10 +26,38 @@ export default function CompositionPage() {
   const [vocalStyle, setVocalStyle] = useState<string | null>(null);
   const [userPrompt, setUserPrompt] = useState("");
 
-  const canGenerate = genre && mood && style && userPrompt.trim().length > 0;
+  const [result, setResult] = useState<GenerationData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const canGenerate =
+    genre && mood && style && userPrompt.trim().length >= 10 && !isPending;
+
+  function handleGenerate() {
+    if (!genre || !mood || !style) return;
+    setError(null);
+
+    startTransition(async () => {
+      const response = await createGeneration({
+        userPrompt,
+        genre,
+        mood,
+        style,
+        tempo: tempo ?? undefined,
+        language,
+        vocalStyle: vocalStyle ?? undefined,
+      });
+
+      if (response.success) {
+        setResult(response.generation);
+      } else {
+        setError(response.error);
+      }
+    });
+  }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-foreground">Composer</h2>
 
@@ -44,15 +79,43 @@ export default function CompositionPage() {
       <Button
         size="lg"
         disabled={!canGenerate}
-        className="w-full py-3 text-base font-semibold"
+        onClick={handleGenerate}
+        className="w-full py-3 text-base font-semibold cursor-pointer"
       >
-        <Sparkles className="mr-2 h-5 w-5" />
-        Générer
+        {isPending ? (
+          <>
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            Génération en cours…
+          </>
+        ) : (
+          <>
+            <Sparkles className="mr-2 h-5 w-5" />
+            Générer
+          </>
+        )}
       </Button>
+
+      {/* Erreur */}
+      {error && (
+        <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 p-4">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
+          <p className="text-sm text-red-300">{error}</p>
+        </div>
+      )}
 
       {/* Zone de résultat */}
       <section className="space-y-4">
-        <GenerationOutput />
+        {result ? (
+          <GenerationResult
+            title={result.title}
+            lyrics={result.lyrics}
+            positivePrompt={result.positivePrompt}
+            negativePrompt={result.negativePrompt}
+            sunoSettings={result.sunoSettings}
+          />
+        ) : (
+          <GenerationOutput />
+        )}
       </section>
     </div>
   );

@@ -142,6 +142,46 @@ export const MUSIC_RULES: MusicRule[] = [
       "Suno gère bien les fusions de 2-3 genres. Préciser un genre principal et un sous-genre ou influence. Exemple : 'Jazz-hop, lo-fi hip-hop with smooth jazz elements'. Au-delà de 3, le résultat devient imprévisible.",
     applicableGenres: "all",
   },
+  {
+    id: "prompt-max-length",
+    category: "production",
+    title: "Longueur max du positive prompt",
+    description:
+      "Le champ 'Style of Music' ne doit pas dépasser ~200 caractères. Au-delà, Suno dilue l'interprétation et le résultat perd en cohérence.",
+    applicableGenres: "all",
+  },
+  {
+    id: "negative-prompt-max-length",
+    category: "production",
+    title: "Longueur max du negative prompt",
+    description:
+      "Le champ 'Exclude from Song' doit rester sous ~120 caractères. 3-5 éléments max, chacun préfixé par 'no'.",
+    applicableGenres: "all",
+  },
+  {
+    id: "prompts-english-only",
+    category: "production",
+    title: "Prompts en anglais obligatoire",
+    description:
+      "Les champs 'Style of Music' et 'Exclude from Song' doivent TOUJOURS être rédigés en anglais, même si les lyrics sont dans une autre langue. L'anglais produit les résultats les plus fiables.",
+    applicableGenres: "all",
+  },
+  {
+    id: "lyrics-word-count",
+    category: "lyrics",
+    title: "Nombre de mots cible pour les lyrics",
+    description:
+      "Viser 200-300 mots de lyrics. Au-delà, Suno tronque ou bâcle la fin. Chaque mot doit compter : privilégier l'impact à la quantité.",
+    applicableGenres: "all",
+  },
+  {
+    id: "prompt-word-order",
+    category: "production",
+    title: "Ordre des mots dans le prompt",
+    description:
+      "Les premiers mots du positive prompt ont plus de poids. Placer le genre en premier, puis les descripteurs les plus importants (mood, vocal, tempo).",
+    applicableGenres: "all",
+  },
 
   // --- Règles spécifiques par genre ---
   {

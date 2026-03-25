@@ -11,7 +11,7 @@ export function StyleSelector({ value, onChange }: StyleSelectorProps) {
   return (
     <fieldset className="space-y-2">
       <legend className="text-xs font-medium text-muted-foreground">Style d&apos;écriture</legend>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
         {WRITING_STYLES.map((style) => {
           const isSelected = value === style.id;
           return (

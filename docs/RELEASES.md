@@ -2,6 +2,14 @@
 
 ---
 
+## v0.4.0 — Phase 3 : Génération IA *(25 mars 2026)*
+
+Génération IA fonctionnelle de bout en bout : Context Builder + API DeepSeek → titre, lyrics structurées, positive/negative prompts et réglages Suno (Vocal Gender, Weirdness, Style Influence). Documentation Suno exhaustive (~1 200 lignes, 4 guides). Audit et correction des données musicales (tags, structures, règles). 59 tests, lint + build OK.
+
+➜ [Release Notes](releases/RELEASE_NOTES_v0.4.0.md) · [Changelog](changelogs/CHANGELOG_v0.4.0_PHASE3_GENERATION_IA.md)
+
+---
+
 ## v0.3.0 — Phase 2 : Interface de composition *(25 mars 2026)*
 
 Interface complète de composition musicale : layout Dashboard, 2 composants UI de base (Button, Badge), 6 composants de composition (genre, mood, style, params, prompt, output), page `/compose` avec orchestration des sélecteurs. Tokens de couleur Tailwind (thème clair + sombre). 13 tests de composants (31 au total). Prêt pour la génération IA (Phase 3).

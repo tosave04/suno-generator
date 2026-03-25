@@ -97,7 +97,7 @@ describe("ParamsPanel", () => {
         onVocalStyleChange={() => {}}
       />,
     );
-    const fastButton = screen.getByText("Fast");
+    const fastButton = screen.getByText("Fast").closest("button")!;
     expect(fastButton.className).toContain("bg-accent");
   });
 });
