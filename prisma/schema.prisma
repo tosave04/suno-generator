@@ -1,0 +1,51 @@
+// Suno Generator — Prisma Schema
+// Base de données SQLite locale
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Generation {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Paramètres utilisateur
+  title         String?
+  userPrompt    String
+  genre         String
+  subGenre      String?
+  mood          String
+  style         String
+  tempo         String?
+  language      String  @default("en")
+  vocalStyle    String?
+  songStructure String?
+
+  // Résultats de la génération
+  lyrics           String
+  positivePrompt   String
+  negativePrompt   String?
+  advancedSettings String?
+
+  // Métadonnées
+  isFavorite  Boolean @default(false)
+  audioFile   String?
+  audioFormat String?
+
+  // Statistiques
+  wordCount        Int?
+  characterCount   Int?
+  detectedLanguage String?
+  sectionCount     Int?
+  estimatedDuration String?
+
+  @@index([genre])
+  @@index([isFavorite])
+  @@index([createdAt])
+}

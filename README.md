@@ -1,33 +1,124 @@
-# Création d'une app capable d'écrire des chansons de haute qualité pour l'app Suno
+# 🎵 Suno Generator
 
-- Choix d'un style parmis une liste, d'un mood, d'un style d'écriture, et toute autres caractéristiques liées à la musique, qui détermineront un style d'écriture et un style musical.
+> Application de composition musicale assistée par IA, générant des lyrics et prompts optimisés pour [Suno](https://suno.com).
 
-- En fonction des différents choix, un context sera construit pour deonner une direction au llm à l'écriture de la musique et du prompt pour Suno.
+**Version :** `0.1.1` · **Statut :** Phase 0 terminée · **Licence :** Privé
 
-- Utilisation de l'api deepseek avec résonnement pour les générations finales.
+---
 
-## Points clés :
+## 🎯 Présentation
 
-Afin de construire l'application, une recherche appronfondit des meilleures méthodes de construction pour les prompt Suno est nécessaire.
+Suno Generator est une application web qui permet de créer des chansons de haute qualité via l'IA. L'utilisateur sélectionne un genre musical, un mood, un style d'écriture et d'autres caractéristiques musicales. L'application construit un contexte riche à partir de ces choix, puis génère via l'API DeepSeek (avec raisonnement) :
 
-Pour l'écriture musicale une recherche en technique et histoire musicale est nécessaire pour rendre l'écriture la plus naturelle et proche des style choisis possible.
+- **Lyrics** : paroles structurées au format Suno 2026 (tags `[Verse]`, `[Chorus]`, etc.)
+- **Prompt positif** : description musicale détaillée pour Suno
+- **Prompt négatif** : exclusions courtes pour affiner le résultat
+- **Réglages avancés** : recommandations de paramètres Suno adaptés au style
 
-Dans l'idée, le développement de cette app doit se faire avec une recherche appronfondit sur internet pour avoir un très grand corpus de data, puis d'écrire les règles qui détermineront le context pendant l'utilisation de l'app.
+## ✨ Fonctionnalités principales
 
-A la mise en prod de l'app les données techniques seront écrites en dur pour obtenir instantanément les contexts nécessaires en fonction de la demande.
+| Fonctionnalité | Description |
+|---|---|
+| **Composition assistée** | Sélection de genre, mood, style d'écriture, tempo, langue, etc. |
+| **Génération IA** | Lyrics + prompts Suno via DeepSeek (raisonnement avancé) |
+| **Historique & favoris** | Sauvegarde des générations en BDD avec système de favoris |
+| **Filtres & recherche** | Panneau latéral filtrable (genre, favoris, fichier audio associé…) |
+| **Upload audio** | Association de fichiers MP3/WAV aux générations |
+| **Statistiques** | Nombre de mots, langue détectée, métriques utiles |
+| **Contexte musical expert** | Base de données de règles musicales par genre et époque |
 
-Le client pourra écrire sa demande de musique et sélectionner les différentes caractéristiques, puis utiliser le bouton générer pour obtenir : le lyric (parfaitement structuré pour Suno en 2026), le prompt positif Suno, le prompt négatif court et les indications de réglages avancées configurer pour être au plus proche du style voulu.
+## 🛠️ Stack technique
 
-L'interface devra être sobre, propre et intuitive.
+| Technologie | Version | Rôle |
+|---|---|---|
+| **Next.js** | 16 | Framework React full-stack (App Router) |
+| **React** | 19 | UI (Server & Client Components) |
+| **TypeScript** | 5+ | Typage strict |
+| **Tailwind CSS** | 4 | Styling utility-first |
+| **Prisma** | 6+ | ORM (SQLite) |
+| **Zod** | 3+ | Validation de données |
+| **DeepSeek API** | — | Génération IA (raisonnement) |
+| **Vitest** | 3+ | Tests unitaires & intégration |
+| **Lucide React** | — | Icônes |
 
-Une zone principale sera consacrée à la création d'une nouvelle musique.
+## 🚀 Démarrage rapide
 
-Une liste latérale avec filtres permettra d'afficher des génération précédente (enregistré en bdd) et/ou de réutiliser des réglages.
+### Prérequis
 
-Possibilité de mettre en favoris des générations précédente ou celle en cours.
+- Node.js >= 20
+- Yarn (package manager)
 
-La BDD sera prisma sqlite.
+### Installation
 
-Possibilité d'uploader un mp3 ou un wav en l'associant à une génération (le filtre pourra n'afficher que les générations ayant un fichier associé, limite l'upload à ces types de fichiers, ils seront uploader dans public).
+```bash
+# Cloner le repository
+git clone <repo-url> suno-generator
+cd suno-generator
 
-Prévoir des informations statistiques pour plus tard (ex: nombre de mots, langue utilisée, ... toute stat jugée utile et intéressante).
+# Installer les dépendances
+yarn install
+
+# Copier les variables d'environnement
+cp .env.example .env.local
+
+# Initialiser la base de données
+yarn db:generate
+yarn db:push
+
+# Lancer le serveur de développement
+yarn dev
+```
+
+### Variables d'environnement
+
+Voir [.env.example](.env.example) pour la liste complète. Variables requises :
+
+| Variable | Description |
+|---|---|
+| `DEEPSEEK_API_KEY` | Clé API DeepSeek pour la génération |
+| `DATABASE_URL` | URL de la base de données SQLite |
+
+## 📁 Structure du projet
+
+```
+suno-generator/
+├── app/                    # Next.js 16 App Router
+│   ├── (dashboard)/        # Interface principale (composition, historique)
+│   ├── (site)/             # Pages publiques
+│   ├── api/                # Routes API
+│   ├── globals.css         # Styles globaux Tailwind
+│   ├── layout.tsx          # Layout racine
+│   └── page.tsx            # Landing page
+├── components/             # Composants React réutilisables
+├── lib/                    # Services, utilitaires, actions serveur
+├── prisma/                 # Schéma Prisma & migrations
+├── public/                 # Fichiers statiques & uploads audio
+├── docs/                   # Documentation technique
+│   ├── SPECIFICATIONS.md   # Cahier des charges complet
+│   ├── ROADMAP.md          # Feuille de route de développement
+│   ├── TEMPLATE.md         # Charte graphique & patterns UI
+│   ├── RELEASES.md         # Résumé des releases
+│   ├── changelogs/         # Changelogs détaillés
+│   └── releases/           # Notes de release
+└── __tests__/              # Tests (Vitest)
+```
+
+## 📖 Documentation
+
+- [Cahier des charges](docs/SPECIFICATIONS.md) — Spécifications complètes
+- [Roadmap](docs/ROADMAP.md) — Plan de développement
+- [Charte UI](docs/TEMPLATE.md) — Patterns et composants Tailwind
+- [Releases](docs/RELEASES.md) — Historique des versions
+
+## 🧪 Scripts disponibles
+
+```bash
+yarn dev          # Serveur de développement
+yarn build        # Build de production
+yarn start        # Serveur de production
+yarn lint         # Lint ESLint
+yarn test         # Tests Vitest
+yarn db:generate  # Générer le client Prisma
+yarn db:push      # Appliquer le schéma à la BDD
+yarn db:studio    # Interface Prisma Studio
+```
