@@ -328,7 +328,7 @@ il en décrit uniquement l’exécution attendue.
 2. Lire 5+ fichiers volumineux dans la même étape
    → CRASH : contexte saturé avant même de coder
 
-3. Générer un fichier de 500+ lignes en une seule réponse
+3. Générer un fichier de 250+ lignes en une seule réponse
    → CRASH : la réponse dépasse la capacité de sortie
 ```
 
@@ -346,16 +346,17 @@ il en décrit uniquement l’exécution attendue.
 
 ### Limites concrètes par étape
 
-| Métrique | Limite par étape |
-|----------|------------------|
-| Fichiers créés/modifiés | **1-2 max** |
-| Lignes de code générées | **~500 max** par fichier |
-| Fichiers lus pour contexte | **3-4 max** (ciblés, pas en vrac) |
-| Appels d'outils | Regrouper les lectures indépendantes, séquencer les écritures |
+| Métrique                   | Limite par étape                                              |
+| -------------------------- | ------------------------------------------------------------- |
+| Fichiers créés/modifiés    | **1-2 max**                                                   |
+| Lignes de code générées    | **~250 max** par fichier                                      |
+| Fichiers lus pour contexte | **3-4 max** (ciblés, pas en vrac)                             |
+| Appels d'outils            | Regrouper les lectures indépendantes, séquencer les écritures |
 
-### En cas de fichier volumineux (>500 lignes)
+### En cas de fichier volumineux (>250 lignes)
 
 Découper l'écriture en **plusieurs étapes successives** :
+
 1. Créer le fichier avec la première section
 2. Ajouter la section suivante via `replace_string_in_file`
 3. Répéter jusqu'à complétion
@@ -437,3 +438,4 @@ Découper l'écriture en **plusieurs étapes successives** :
 > 5. Ne génère JAMAIS de code avec `as any`
 > 6. Après chaque ajout de code, appliquer la **Revue “Human-Quality” obligatoire**
 > 7. Toute UI doit respecter `docs/TEMPLATE.md` (patterns Tailwind autoritaires)
+> 8. Ne jamais générer un fichier de 250+ lignes, ni 5+ fichiers, en une seule réponse

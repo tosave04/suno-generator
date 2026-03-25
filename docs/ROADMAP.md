@@ -9,8 +9,8 @@
 | Phase | Titre | Statut | Objectif |
 |-------|-------|--------|----------|
 | **Phase 0** | Fondations | ✅ Terminée | Stack, BDD, structure |
-| **Phase 1** | Données musicales | 🟢 En cours | Corpus de genres, moods, styles |
-| **Phase 2** | Interface de composition | ⬜ À faire | UI principale + sélecteurs |
+| **Phase 1** | Données musicales | ✅ Terminée | Corpus de genres, moods, styles |
+| **Phase 2** | Interface de composition | 🟢 En cours | UI principale + sélecteurs |
 | **Phase 3** | Génération IA | ⬜ À faire | Context Builder + DeepSeek |
 | **Phase 4** | Historique & favoris | ⬜ À faire | Sidebar, filtres, favoris |
 | **Phase 5** | Upload audio | ⬜ À faire | Upload MP3/WAV |
@@ -43,25 +43,25 @@
 
 ---
 
-## Phase 1 — Données musicales
+## Phase 1 — Données musicales ✅ *Terminée*
 
 **Objectif :** Constituer le corpus de connaissances musicales qui alimentera le Context Builder. Recherche approfondie requise pour chaque genre.
 
-- [ ] Définir la structure TypeScript des données (`GenreData`, `MoodData`, `WritingStyleData`)
-- [ ] Créer `lib/data/genres.ts` — Minimum 15 genres avec :
+- [x] Définir la structure TypeScript des données (`GenreData`, `MoodData`, `WritingStyleData`, `SunoTag`, `MusicRule`) — `lib/data/types.ts`
+- [x] Créer `lib/data/genres.ts` — 18 genres avec :
   - Description, sous-genres, BPM typiques
   - Structure type, instruments clés
   - Caractéristiques vocales, contexte historique
   - Tags Suno et mots-clés de prompt
-- [ ] Créer `lib/data/moods.ts` — Minimum 10 moods avec :
+- [x] Créer `lib/data/moods.ts` — 10 moods avec :
   - Champs lexicaux, caractéristiques musicales
   - Genres compatibles, modificateurs de prompt
-- [ ] Créer `lib/data/styles.ts` — Minimum 6 styles d'écriture avec :
+- [x] Créer `lib/data/styles.ts` — 6 styles d'écriture avec :
   - Règles de rédaction, exemples de patterns
   - Conseils de formatage Suno
-- [ ] Créer `lib/data/suno-tags.ts` — Référence complète des tags Suno 2026
-- [ ] Créer `lib/data/music-rules.ts` — Règles transversales (théorie musicale)
-- [ ] Tests unitaires pour la cohérence des données
+- [x] Créer `lib/data/suno-tags.ts` — Référence complète des tags Suno 2026 (22 tags, 4 catégories)
+- [x] Créer `lib/data/music-rules.ts` — Règles transversales (théorie musicale, 22 règles)
+- [x] Tests unitaires pour la cohérence des données (18 tests, tous passent)
 
 **Livrable :** Corpus complet exploitable par le Context Builder.
 

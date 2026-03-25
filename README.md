@@ -2,7 +2,7 @@
 
 > Application de composition musicale assistée par IA, générant des lyrics et prompts optimisés pour [Suno](https://suno.com).
 
-**Version :** `0.1.1` · **Statut :** Phase 0 terminée · **Licence :** Privé
+**Version :** `0.2.0` · **Statut :** Phase 1 terminée · **Licence :** Privé
 
 ---
 
