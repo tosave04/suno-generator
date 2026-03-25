@@ -9,14 +9,14 @@ const TEMPOS = [
 ] as const;
 
 const LANGUAGES = [
-  { value: "en", label: "English" },
-  { value: "fr", label: "Français" },
-  { value: "es", label: "Español" },
-  { value: "pt", label: "Português" },
-  { value: "ja", label: "日本語" },
-  { value: "ko", label: "한국어" },
-  { value: "de", label: "Deutsch" },
-  { value: "it", label: "Italiano" },
+  { value: "en", label: "English", countryCode: "gb" },
+  { value: "fr", label: "Français", countryCode: "fr" },
+  { value: "es", label: "Español", countryCode: "es" },
+  { value: "pt", label: "Português", countryCode: "br" },
+  { value: "ja", label: "日本語", countryCode: "jp" },
+  { value: "ko", label: "한국어", countryCode: "kr" },
+  { value: "de", label: "Deutsch", countryCode: "de" },
+  { value: "it", label: "Italiano", countryCode: "it" },
 ] as const;
 
 const VOCAL_STYLES = [
@@ -68,17 +68,35 @@ export function ParamsPanel({
       {/* Langue */}
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-muted-foreground">Langue</label>
-        <select
-          value={language}
-          onChange={(e) => onLanguageChange(e.target.value)}
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-        >
-          {LANGUAGES.map((lang) => (
-            <option key={lang.value} value={lang.value}>
-              {lang.label}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-wrap gap-1.5">
+          {LANGUAGES.map((lang) => {
+            const isSelected = language === lang.value;
+            return (
+              <button
+                key={lang.value}
+                type="button"
+                onClick={() => onLanguageChange(lang.value)}
+                title={lang.label}
+                className={`flex items-center gap-1 rounded-md px-2 py-1.5 text-xs transition-colors cursor-pointer ${
+                  isSelected
+                    ? "font-medium bg-accent text-accent-foreground"
+                    : "bg-background text-muted-foreground hover:bg-muted border border-border"
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`https://flagcdn.com/20x15/${lang.countryCode}.png`}
+                  srcSet={`https://flagcdn.com/40x30/${lang.countryCode}.png 2x`}
+                  width={20}
+                  height={15}
+                  alt={lang.label}
+                  className="rounded-sm object-cover"
+                />
+                <span>{lang.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Style vocal */}

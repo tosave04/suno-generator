@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Music } from "lucide-react";
+import { Music, Copy, Check } from "lucide-react";
 import type { SunoSettings } from "@/lib/actions/generation";
 
-const TABS = ["Lyrics", "Prompt +", "Prompt −", "Réglages"] as const;
+const TABS = ["Lyrics", "Réglages"] as const;
 type Tab = (typeof TABS)[number];
 
 /** État vide : aucune génération encore */
@@ -62,9 +62,13 @@ export function GenerationResult({
       {/* Content */}
       <div className="min-h-40">
         {activeTab === "Lyrics" && <LyricsView lyrics={lyrics} />}
-        {activeTab === "Prompt +" && <PromptView text={positivePrompt} />}
-        {activeTab === "Prompt −" && <PromptView text={negativePrompt ?? "Aucun prompt négatif"} />}
-        {activeTab === "Réglages" && <SunoSettingsView settings={sunoSettings} />}
+        {activeTab === "Réglages" && (
+          <SettingsView
+            positivePrompt={positivePrompt}
+            negativePrompt={negativePrompt}
+            sunoSettings={sunoSettings}
+          />
+        )}
       </div>
     </div>
   );
@@ -82,67 +86,122 @@ function EmptyState() {
   );
 }
 
+function CopyButton({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      title={`Copier ${label}`}
+      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-background transition-colors cursor-pointer"
+    >
+      {copied ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
+      {copied ? "Copié" : label}
+    </button>
+  );
+}
+
 function LyricsView({ lyrics }: { lyrics: string }) {
   const lines = lyrics.split("\n");
 
   return (
-    <div className="font-mono text-sm leading-relaxed space-y-1 p-3 rounded-md bg-background">
-      {lines.map((line, i) => {
-        const tagMatch = line.match(/^\[(.+)\]$/);
-        const inlineMatch = line.match(/^\((.+)\)$/);
+    <div className="space-y-2">
+      <div className="flex justify-end">
+        <CopyButton text={lyrics} label="Lyrics" />
+      </div>
+      <div className="font-mono text-sm leading-relaxed space-y-1 p-3 rounded-md bg-background">
+        {lines.map((line, i) => {
+          const tagMatch = line.match(/^\[(.+)\]$/);
+          const inlineMatch = line.match(/^\((.+)\)$/);
 
-        if (tagMatch) {
+          if (tagMatch) {
+            return (
+              <p key={i} className="text-accent font-semibold mt-3">
+                {line}
+              </p>
+            );
+          }
+          if (inlineMatch) {
+            return (
+              <p key={i} className="text-muted-foreground italic">
+                {line}
+              </p>
+            );
+          }
+          if (line.trim() === "") {
+            return <br key={i} />;
+          }
           return (
-            <p key={i} className="text-accent font-semibold mt-3">
+            <p key={i} className="text-foreground">
               {line}
             </p>
           );
-        }
-        if (inlineMatch) {
-          return (
-            <p key={i} className="text-muted-foreground italic">
-              {line}
-            </p>
-          );
-        }
-        if (line.trim() === "") {
-          return <br key={i} />;
-        }
-        return (
-          <p key={i} className="text-foreground">
-            {line}
-          </p>
-        );
-      })}
+        })}
+      </div>
     </div>
   );
 }
 
-function PromptView({ text }: { text: string }) {
-  return (
-    <div className="relative group p-3 rounded-md bg-background">
-      <p className="text-sm text-foreground whitespace-pre-wrap">{text}</p>
-    </div>
-  );
-}
-
-function SunoSettingsView({ settings }: { settings: SunoSettings }) {
-  const items = [
-    { label: "Vocal Gender", value: settings.vocalGender },
-    { label: "Weirdness", value: `${settings.weirdness}%` },
-    { label: "Style Influence", value: `${settings.styleInfluence}%` },
+function SettingsView({
+  positivePrompt,
+  negativePrompt,
+  sunoSettings,
+}: {
+  positivePrompt: string;
+  negativePrompt: string | null;
+  sunoSettings: SunoSettings;
+}) {
+  const settingsItems = [
+    { label: "Vocal Gender", value: sunoSettings.vocalGender },
+    { label: "Weirdness", value: `${sunoSettings.weirdness}%` },
+    { label: "Style Influence", value: `${sunoSettings.styleInfluence}%` },
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-3 p-3">
-      {items.map(({ label, value }) => (
-        <div key={label} className="rounded-md bg-background p-2.5 space-y-1">
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-            {label}
-          </span>
-          <p className="text-sm font-medium text-foreground">{value}</p>
+    <div className="space-y-4 p-3">
+      {/* Prompt + */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-muted-foreground">Style of Music (Prompt +)</span>
+          <CopyButton text={positivePrompt} label="Prompt +" />
         </div>
-      ))}
+        <p className="text-sm text-foreground whitespace-pre-wrap rounded-md bg-background p-2.5">
+          {positivePrompt}
+        </p>
+      </div>
+
+      {/* Prompt − */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-muted-foreground">Exclude from Song (Prompt −)</span>
+          {negativePrompt && <CopyButton text={negativePrompt} label="Prompt −" />}
+        </div>
+        <p className="text-sm text-foreground whitespace-pre-wrap rounded-md bg-background p-2.5">
+          {negativePrompt ?? "Aucun prompt négatif"}
+        </p>
+      </div>
+
+      {/* Suno Settings */}
+      <div className="space-y-1.5">
+        <span className="text-xs font-medium text-muted-foreground">Paramètres Suno</span>
+        <div className="grid grid-cols-3 gap-3">
+          {settingsItems.map(({ label, value }) => (
+            <div key={label} className="rounded-md bg-background p-2.5 space-y-1">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                {label}
+              </span>
+              <p className="text-sm font-medium text-foreground">{value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

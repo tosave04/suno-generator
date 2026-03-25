@@ -2,6 +2,11 @@
 
 import { WRITING_STYLES } from "@/lib/data/styles";
 
+const STYLE_ICONS: Record<string, string> = {
+  poetic: "✒️", storytelling: "📖", direct: "🎯", abstract: "🌀",
+  conversational: "💬", anthem: "🏟️",
+};
+
 interface StyleSelectorProps {
   value: string | null;
   onChange: (styleId: string) => void;
@@ -31,6 +36,7 @@ export function StyleSelector({ value, onChange }: StyleSelectorProps) {
                 onChange={() => onChange(style.id)}
                 className="hidden"
               />
+              <span className="text-lg">{STYLE_ICONS[style.id] ?? "✍️"}</span>
               <span className={isSelected ? "text-accent font-medium" : "text-foreground"}>
                 {style.name}
               </span>
