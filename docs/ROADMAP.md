@@ -10,8 +10,8 @@
 |-------|-------|--------|----------|
 | **Phase 0** | Fondations | ✅ Terminée | Stack, BDD, structure |
 | **Phase 1** | Données musicales | ✅ Terminée | Corpus de genres, moods, styles |
-| **Phase 2** | Interface de composition | 🟢 En cours | UI principale + sélecteurs |
-| **Phase 3** | Génération IA | ⬜ À faire | Context Builder + DeepSeek |
+| **Phase 2** | Interface de composition | ✅ Terminée | UI principale + sélecteurs |
+| **Phase 3** | Génération IA | 🟢 En cours | Context Builder + DeepSeek |
 | **Phase 4** | Historique & favoris | ⬜ À faire | Sidebar, filtres, favoris |
 | **Phase 5** | Upload audio | ⬜ À faire | Upload MP3/WAV |
 | **Phase 6** | Polish & Stats | ⬜ À faire | Statistiques, UX, tests |
@@ -67,23 +67,27 @@
 
 ---
 
-## Phase 2 — Interface de composition
+## Phase 2 — Interface de composition ✅ *Terminée*
 
 **Objectif :** Construire l'interface principale permettant de sélectionner les paramètres et de lancer une génération.
 
-- [ ] Créer le layout Dashboard (`app/(dashboard)/layout.tsx`)
-- [ ] Créer les composants UI de base (`components/ui/`) :
-  - Button, Card, Badge, Input, Textarea, Select, Toggle
-- [ ] Créer `components/composition/genre-selector.tsx` — Grid de cards
-- [ ] Créer `components/composition/mood-selector.tsx` — Grid de badges
-- [ ] Créer `components/composition/style-selector.tsx` — Radio group
-- [ ] Créer `components/composition/params-panel.tsx` — Tempo, langue, vocal
-- [ ] Créer `components/composition/prompt-input.tsx` — Textarea avec compteur
-- [ ] Créer `components/composition/generation-output.tsx` — Affichage résultat
-- [ ] Créer la page principale `app/(dashboard)/page.tsx`
-- [ ] Tests composants (rendu, interactions basiques)
+- [x] Configurer `globals.css` avec tokens couleur complets (thème clair + sombre, TEMPLATE.md)
+- [x] Mettre à jour le layout racine (metadata Suno Generator)
+- [x] Créer le layout Dashboard (`app/(dashboard)/layout.tsx`) — Header avec icône + titre
+- [x] Créer les composants UI de base (`components/ui/`) :
+  - Button (5 variantes, 3 tailles, états loading/disabled)
+  - Badge (default, active, mood, genre avec couleurs spécifiques)
+- [x] Créer `components/composition/genre-selector.tsx` — Grid de cards avec émojis
+- [x] Créer `components/composition/mood-selector.tsx` — Grid de badges cliquables
+- [x] Créer `components/composition/style-selector.tsx` — Radio group
+- [x] Créer `components/composition/params-panel.tsx` — Tempo (boutons segmentés), langue, vocal
+- [x] Créer `components/composition/prompt-input.tsx` — Textarea avec compteur + exemples cliquables
+- [x] Créer `components/composition/generation-output.tsx` — Affichage résultat avec tabs (Lyrics, Prompt+, Prompt−, Réglages)
+- [x] Créer la page principale `app/(dashboard)/compose/page.tsx` — Orchestration de tous les sélecteurs + bouton Générer
+- [x] Configurer `app/page.tsx` — Redirect vers `/compose`
+- [x] Tests composants (13 tests : rendu, interactions, sélections) — tous passent
 
-**Livrable :** Interface complète de composition (sans génération IA encore).
+**Livrable :** Interface complète de composition accessible à `/compose` (sans génération IA encore).
 
 ---
 

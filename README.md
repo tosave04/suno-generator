@@ -2,7 +2,7 @@
 
 > Application de composition musicale assistée par IA, générant des lyrics et prompts optimisés pour [Suno](https://suno.com).
 
-**Version :** `0.2.0` · **Statut :** Phase 1 terminée · **Licence :** Privé
+**Version :** `0.3.0` · **Statut :** Phase 2 terminée · **Licence :** Privé
 
 ---
 
@@ -89,7 +89,9 @@ suno-generator/
 │   ├── globals.css         # Styles globaux Tailwind
 │   ├── layout.tsx          # Layout racine
 │   └── page.tsx            # Landing page
-├── components/             # Composants React réutilisables
+├── components/             # Composants React (UI, composition)
+│   ├── ui/                 # Button, Badge
+│   └── composition/        # Sélecteurs genre, mood, style, params, prompt, output
 ├── lib/                    # Services, utilitaires, actions serveur
 ├── prisma/                 # Schéma Prisma & migrations
 ├── public/                 # Fichiers statiques & uploads audio
