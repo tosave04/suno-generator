@@ -28,6 +28,7 @@ export interface GenerationData {
   positivePrompt: string;
   negativePrompt: string | null;
   sunoSettings: SunoSettings;
+  audioFile: string | null;
   wordCount: number;
   characterCount: number;
   sectionCount: number;
@@ -102,6 +103,7 @@ export async function createGeneration(
         positivePrompt: generation.positivePrompt,
         negativePrompt: generation.negativePrompt,
         sunoSettings: response.sunoSettings,
+        audioFile: null,
         wordCount: stats.wordCount,
         characterCount: stats.characterCount,
         sectionCount: stats.sectionCount,
@@ -141,6 +143,7 @@ export interface GenerationFilters {
   search?: string;
   genre?: string;
   favoritesOnly?: boolean;
+  withAudio?: boolean;
   sortOrder?: "recent" | "oldest";
 }
 
@@ -158,6 +161,10 @@ export async function getGenerations(
 
   if (filters.genre) {
     where.genre = filters.genre;
+  }
+
+  if (filters.withAudio) {
+    where.audioFile = { not: null };
   }
 
   if (filters.search) {
@@ -266,6 +273,7 @@ export async function getGenerationById(
     positivePrompt: generation.positivePrompt,
     negativePrompt: generation.negativePrompt,
     sunoSettings,
+    audioFile: generation.audioFile ?? null,
     wordCount: generation.wordCount ?? 0,
     characterCount: generation.characterCount ?? 0,
     sectionCount: generation.sectionCount ?? 0,

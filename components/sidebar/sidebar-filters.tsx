@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Star, ArrowUpDown } from "lucide-react";
+import { Search, Star, ArrowUpDown, Music } from "lucide-react";
 import { GENRES } from "@/lib/data/genres";
 import type { GenerationFilters } from "@/lib/actions/generation";
 
@@ -44,6 +44,18 @@ export function SidebarFilters({ filters, onChange }: SidebarFiltersProps) {
         >
           <Star className="inline h-3 w-3 mr-0.5" />
           Favoris
+        </button>
+        <button
+          type="button"
+          onClick={() => updateFilter("withAudio", !filters.withAudio)}
+          className={`text-[10px] px-2 py-1 rounded-full transition-colors cursor-pointer ${
+            filters.withAudio
+              ? "bg-accent/20 text-accent"
+              : "bg-muted text-muted-foreground hover:bg-accent/20 hover:text-accent"
+          }`}
+        >
+          <Music className="inline h-3 w-3 mr-0.5" />
+          Audio
         </button>
       </div>
 

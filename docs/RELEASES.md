@@ -2,6 +2,14 @@
 
 ---
 
+## v0.6.0 — Phase 5 : Upload Audio *(26 mars 2026)*
+
+Upload de fichiers audio MP3/WAV associés aux générations. Zone d'upload intégrée sous le résultat (drag & drop, validation Zod, 20 Mo max). Player HTML5 natif avec contrôles. Remplacement et suppression de fichiers. Filtre "Audio" dans la sidebar. Server Actions : `uploadAudio`, `deleteAudio`. 86 tests, lint + build OK.
+
+➜ [Release Notes](releases/RELEASE_NOTES_v0.6.0.md) · [Changelog](changelogs/CHANGELOG_v0.6.0_PHASE5_UPLOAD_AUDIO.md)
+
+---
+
 ## v0.5.0 — Phase 4 : Historique & Favoris *(26 mars 2026)*
 
 Panneau latéral (sidebar) avec historique complet des générations : cards avec titre, badges genre/mood colorés, date, boutons favori/supprimer. Filtres fonctionnels : recherche texte, genre, favoris, tri date. Chargement d'une génération depuis la sidebar vers la zone principale. Server Actions : `toggleFavorite`, `deleteGeneration`, `getGenerations`, `getGenerationById`. 72 tests, lint + build OK.

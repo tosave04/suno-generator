@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Music, Copy, Check } from "lucide-react";
 import type { SunoSettings } from "@/lib/actions/generation";
+import { AudioUpload } from "@/components/composition/audio-upload";
 
 const TABS = ["Lyrics", "Réglages"] as const;
 type Tab = (typeof TABS)[number];
@@ -18,17 +19,23 @@ export function GenerationOutput() {
 
 /** Version avec résultat */
 export function GenerationResult({
+  generationId,
   title,
   lyrics,
   positivePrompt,
   negativePrompt,
   sunoSettings,
+  audioFile,
+  onAudioChange,
 }: {
+  generationId: string;
   title: string;
   lyrics: string;
   positivePrompt: string;
   negativePrompt: string | null;
   sunoSettings: SunoSettings;
+  audioFile: string | null;
+  onAudioChange: (audioFile: string | null) => void;
 }) {
   const [activeTab, setActiveTab] = useState<Tab>("Lyrics");
 
@@ -69,6 +76,16 @@ export function GenerationResult({
             sunoSettings={sunoSettings}
           />
         )}
+      </div>
+
+      {/* Audio Upload — toujours visible */}
+      <div className="border-t border-border pt-4">
+        <h4 className="text-sm font-medium text-muted-foreground mb-3">Fichier audio</h4>
+        <AudioUpload
+          generationId={generationId}
+          audioFile={audioFile}
+          onAudioChange={onAudioChange}
+        />
       </div>
     </div>
   );

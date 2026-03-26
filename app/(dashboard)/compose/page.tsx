@@ -73,6 +73,11 @@ export default function CompositionPage() {
     });
   }, []);
 
+  const handleAudioChange = useCallback((audioFile: string | null) => {
+    setResult((prev) => prev ? { ...prev, audioFile } : prev);
+    setRefreshKey((k) => k + 1);
+  }, []);
+
   return (
     <>
       {/* Sidebar */}
@@ -134,11 +139,14 @@ export default function CompositionPage() {
           <section className="space-y-4">
             {result ? (
               <GenerationResult
+                generationId={result.id}
                 title={result.title}
                 lyrics={result.lyrics}
                 positivePrompt={result.positivePrompt}
                 negativePrompt={result.negativePrompt}
                 sunoSettings={result.sunoSettings}
+                audioFile={result.audioFile}
+                onAudioChange={handleAudioChange}
               />
             ) : (
               <GenerationOutput />

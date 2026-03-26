@@ -13,7 +13,7 @@
 | **Phase 2** | Interface de composition | ✅ Terminée | UI principale + sélecteurs |
 | **Phase 3** | Génération IA | ✅ Terminée | Context Builder + DeepSeek |
 | **Phase 4** | Historique & favoris | ✅ Terminée | Sidebar, filtres, favoris |
-| **Phase 5** | Upload audio | ⬜ À faire | Upload MP3/WAV |
+| **Phase 5** | Upload audio | ✅ Terminée | Upload MP3/WAV |
 | **Phase 6** | Polish & Stats | ⬜ À faire | Statistiques, UX, tests |
 
 ---
@@ -129,19 +129,20 @@
 
 ---
 
-## Phase 5 — Upload audio
+## Phase 5 — Upload audio ✅ *Terminée*
 
 **Objectif :** Permettre l'association de fichiers audio aux générations.
 
-- [ ] Créer `lib/schemas/upload.ts` — Validation Zod
-- [ ] Créer `lib/actions/upload.ts` — Server Action upload
-- [ ] Composant d'upload dans la zone de résultat
-- [ ] Filtre "avec audio" dans la sidebar
-- [ ] Lecture audio inline (player basique)
-- [ ] Gestion de la suppression/remplacement
-- [ ] Tests : validation fichier, upload flow
+- [x] Créer `lib/schemas/upload.ts` — Validation Zod (formats MP3/WAV, taille max 20 Mo, validation types MIME)
+- [x] Créer `lib/actions/upload.ts` — Server Actions `uploadAudio` et `deleteAudio` avec écriture fichier + MAJ BDD
+- [x] Créer `components/composition/audio-upload.tsx` — Composant d'upload dans la zone de résultat (onglet Audio)
+- [x] Filtre "avec audio" dans la sidebar (bouton toggle dans les filtres rapides)
+- [x] Lecture audio inline (player HTML5 natif avec contrôles)
+- [x] Gestion de la suppression/remplacement (boutons Remplacer et Supprimer)
+- [x] Drag & drop de fichiers audio sur la zone d'upload
+- [x] Tests : 14 tests (validation schéma upload + delete, constantes, cas limites) — 86 tests au total
 
-**Livrable :** Upload MP3/WAV fonctionnel avec lecture.
+**Livrable :** Upload MP3/WAV fonctionnel avec lecture, remplacement et suppression.
 
 ---
 
