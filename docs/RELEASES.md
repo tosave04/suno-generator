@@ -2,6 +2,14 @@
 
 ---
 
+## v1.0.0 — Phase 6 : Polish, Stats & Tests *(26 mars 2026)*
+
+Dashboard de statistiques (KPIs, top genres/moods, activité 7j). Stats par génération (mots, caractères, sections, durée). Responsive mobile complet (sidebar collapsible, grilles adaptatives). Accessibilité ARIA (sélecteurs, onglets, navigation). Pagination sidebar (20 items/page). Animations CSS (fade-in, transitions). Tests E2E Playwright (4 scénarios). 95 tests unitaires, lint + build OK.
+
+➜ [Release Notes](releases/RELEASE_NOTES_v1.0.0.md) · [Changelog](changelogs/CHANGELOG_v1.0.0_PHASE6_POLISH_STATS.md)
+
+---
+
 ## v0.6.0 — Phase 5 : Upload Audio *(26 mars 2026)*
 
 Upload de fichiers audio MP3/WAV associés aux générations. Zone d'upload intégrée sous le résultat (drag & drop, validation Zod, 20 Mo max). Player HTML5 natif avec contrôles. Remplacement et suppression de fichiers. Filtre "Audio" dans la sidebar. Server Actions : `uploadAudio`, `deleteAudio`. 86 tests, lint + build OK.

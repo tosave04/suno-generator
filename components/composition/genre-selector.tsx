@@ -17,7 +17,7 @@ interface GenreSelectorProps {
 
 export function GenreSelector({ value, onChange }: GenreSelectorProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" role="group" aria-label="Genre musical">
       <label className="text-xs font-medium text-muted-foreground">Genre musical</label>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
         {GENRES.map((genre) => {
@@ -27,6 +27,7 @@ export function GenreSelector({ value, onChange }: GenreSelectorProps) {
               key={genre.id}
               type="button"
               onClick={() => onChange(genre.id)}
+              aria-pressed={isSelected}
               className={`flex flex-col items-center gap-2 rounded-lg p-4 text-center transition-all cursor-pointer ${
                 isSelected
                   ? "border-2 border-accent bg-accent/10 ring-1 ring-accent/30"

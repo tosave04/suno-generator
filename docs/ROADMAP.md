@@ -14,7 +14,7 @@
 | **Phase 3** | Génération IA | ✅ Terminée | Context Builder + DeepSeek |
 | **Phase 4** | Historique & favoris | ✅ Terminée | Sidebar, filtres, favoris |
 | **Phase 5** | Upload audio | ✅ Terminée | Upload MP3/WAV |
-| **Phase 6** | Polish & Stats | ⬜ À faire | Statistiques, UX, tests |
+| **Phase 6** | Polish & Stats | ✅ Terminée | Statistiques, UX, tests |
 
 ---
 
@@ -146,18 +146,18 @@
 
 ---
 
-## Phase 6 — Polish, stats & tests
+## Phase 6 — Polish, stats & tests ✅ *Terminée*
 
 **Objectif :** Finaliser l'UX, ajouter les statistiques et assurer la couverture de tests.
 
-- [ ] Dashboard de statistiques basique (nombre de générations, genres les plus utilisés…)
-- [ ] Affichage des stats par génération (word count, sections…)
-- [ ] Animations et transitions UI
-- [ ] Responsive mobile complet
-- [ ] Accessibilité (ARIA, navigation clavier)
-- [ ] Tests E2E Playwright (parcours critique : composer → générer → sauvegarder)
-- [ ] Optimisation performances (lazy loading sidebar, pagination)
-- [ ] Documentation finale
+- [x] Dashboard de statistiques basique (nombre de générations, genres les plus utilisés…)
+- [x] Affichage des stats par génération (word count, sections…)
+- [x] Animations et transitions UI
+- [x] Responsive mobile complet
+- [x] Accessibilité (ARIA, navigation clavier)
+- [x] Tests E2E Playwright (parcours critique : composer → générer → sauvegarder)
+- [x] Optimisation performances (lazy loading sidebar, pagination)
+- [x] Documentation finale
 
 **Livrable :** Application v1.0 complète, testée, documentée.
 

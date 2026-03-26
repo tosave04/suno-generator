@@ -88,7 +88,7 @@ export default function CompositionPage() {
       />
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6">
         <div className="mx-auto max-w-7xl space-y-6">
           <section className="space-y-4">
             <h2 className="text-xl font-semibold text-foreground">Composer</h2>
@@ -147,6 +147,10 @@ export default function CompositionPage() {
                 sunoSettings={result.sunoSettings}
                 audioFile={result.audioFile}
                 onAudioChange={handleAudioChange}
+                wordCount={result.wordCount}
+                characterCount={result.characterCount}
+                sectionCount={result.sectionCount}
+                estimatedDuration={result.estimatedDuration}
               />
             ) : (
               <GenerationOutput />

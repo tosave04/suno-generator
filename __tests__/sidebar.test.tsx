@@ -14,7 +14,7 @@ vi.mock("@/lib/actions/generation", async (importOriginal) => {
   return {
     ...original,
     deleteGeneration: vi.fn().mockResolvedValue({ success: true }),
-    getGenerations: vi.fn().mockResolvedValue([]),
+    getGenerations: vi.fn().mockResolvedValue({ items: [], hasMore: false }),
   };
 });
 

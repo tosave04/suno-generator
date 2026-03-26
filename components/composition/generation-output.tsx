@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Music, Copy, Check } from "lucide-react";
+import { Music, Copy, Check, Hash, Type, LayoutList, Clock } from "lucide-react";
 import type { SunoSettings } from "@/lib/actions/generation";
 import { AudioUpload } from "@/components/composition/audio-upload";
 
@@ -27,6 +27,10 @@ export function GenerationResult({
   sunoSettings,
   audioFile,
   onAudioChange,
+  wordCount,
+  characterCount,
+  sectionCount,
+  estimatedDuration,
 }: {
   generationId: string;
   title: string;
@@ -36,23 +40,37 @@ export function GenerationResult({
   sunoSettings: SunoSettings;
   audioFile: string | null;
   onAudioChange: (audioFile: string | null) => void;
+  wordCount: number;
+  characterCount: number;
+  sectionCount: number;
+  estimatedDuration: string;
 }) {
   const [activeTab, setActiveTab] = useState<Tab>("Lyrics");
 
   return (
-    <div className="rounded-lg border border-border bg-muted p-4 space-y-4">
+    <div className="rounded-lg border border-border bg-muted p-4 space-y-4 animate-fade-in">
       {/* Header avec titre */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-foreground">{title}</h3>
       </div>
 
+      {/* Stats bar */}
+      <div className="flex flex-wrap gap-4 rounded-md bg-background px-3 py-2">
+        <StatBadge icon={<Hash className="h-3.5 w-3.5" />} label="Mots" value={wordCount} />
+        <StatBadge icon={<Type className="h-3.5 w-3.5" />} label="Caractères" value={characterCount} />
+        <StatBadge icon={<LayoutList className="h-3.5 w-3.5" />} label="Sections" value={sectionCount} />
+        <StatBadge icon={<Clock className="h-3.5 w-3.5" />} label="Durée est." value={estimatedDuration} />
+      </div>
+
       {/* Tabs */}
-      <div className="border-b border-border">
+      <div className="border-b border-border" role="tablist" aria-label="Sections de la génération">
         <nav className="flex gap-0">
           {TABS.map((tab) => (
             <button
               key={tab}
               type="button"
+              role="tab"
+              aria-selected={activeTab === tab}
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 text-sm border-b-2 transition-colors ${
                 activeTab === tab
@@ -87,6 +105,16 @@ export function GenerationResult({
           onAudioChange={onAudioChange}
         />
       </div>
+    </div>
+  );
+}
+
+function StatBadge({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
+  return (
+    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      {icon}
+      <span>{label}</span>
+      <span className="font-medium text-foreground">{value}</span>
     </div>
   );
 }
@@ -208,7 +236,7 @@ function SettingsView({
       {/* Suno Settings */}
       <div className="space-y-1.5">
         <span className="text-xs font-medium text-muted-foreground">Paramètres Suno</span>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {settingsItems.map(({ label, value }) => (
             <div key={label} className="rounded-md bg-background p-2.5 space-y-1">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider">

@@ -145,14 +145,24 @@ export interface GenerationFilters {
   favoritesOnly?: boolean;
   withAudio?: boolean;
   sortOrder?: "recent" | "oldest";
+  page?: number;
+}
+
+/** Nombre de générations par page dans la sidebar. */
+const GENERATIONS_PAGE_SIZE = 20;
+
+/** Résultat paginé des générations. */
+export interface PaginatedGenerations {
+  items: GenerationSummary[];
+  hasMore: boolean;
 }
 
 /**
- * Server Action — Récupère la liste des générations avec filtres.
+ * Server Action — Récupère la liste des générations avec filtres et pagination.
  */
 export async function getGenerations(
   filters: GenerationFilters = {}
-): Promise<GenerationSummary[]> {
+): Promise<PaginatedGenerations> {
   const where: Record<string, unknown> = {};
 
   if (filters.favoritesOnly) {
@@ -174,6 +184,9 @@ export async function getGenerations(
     ];
   }
 
+  const page = filters.page ?? 0;
+  const take = GENERATIONS_PAGE_SIZE + 1; // +1 to detect hasMore
+
   const generations = await db.generation.findMany({
     where,
     select: {
@@ -189,9 +202,14 @@ export async function getGenerations(
     orderBy: {
       createdAt: filters.sortOrder === "oldest" ? "asc" : "desc",
     },
+    skip: page * GENERATIONS_PAGE_SIZE,
+    take,
   });
 
-  return generations;
+  const hasMore = generations.length > GENERATIONS_PAGE_SIZE;
+  const items = hasMore ? generations.slice(0, GENERATIONS_PAGE_SIZE) : generations;
+
+  return { items, hasMore };
 }
 
 const deleteGenerationSchema = z.object({

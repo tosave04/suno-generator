@@ -49,7 +49,7 @@ export function GenerationCard({ generation, isActive, onSelect }: GenerationCar
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") onSelect(generation.id);
       }}
-      className={`group flex flex-col gap-2 rounded-lg border p-3 cursor-pointer transition-all ${
+      className={`group flex flex-col gap-2 rounded-lg border p-3 cursor-pointer transition-all animate-fade-in ${
         isActive
           ? "border-accent/50 bg-accent/5"
           : "border-border bg-muted hover:border-accent/30 hover:bg-muted/80"

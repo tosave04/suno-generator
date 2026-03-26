@@ -14,7 +14,7 @@ interface MoodSelectorProps {
 
 export function MoodSelector({ value, onChange }: MoodSelectorProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" role="group" aria-label="Mood / Atmosphère">
       <label className="text-xs font-medium text-muted-foreground">Mood / Atmosphère</label>
       <div className="flex flex-wrap gap-2">
         {MOODS.map((mood) => {
@@ -24,6 +24,7 @@ export function MoodSelector({ value, onChange }: MoodSelectorProps) {
               key={mood.id}
               type="button"
               onClick={() => onChange(mood.id)}
+              aria-pressed={isSelected}
               className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
                 isSelected
                   ? "bg-accent/20 text-accent ring-1 ring-accent/50"
