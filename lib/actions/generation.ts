@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { createGenerationSchema, type CreateGenerationInput } from "@/lib/schemas/generation";
@@ -121,4 +122,153 @@ export async function createGeneration(
       error: `Erreur inattendue : ${message}`,
     };
   }
+}
+
+/** Données minimales d'une génération pour la sidebar. */
+export interface GenerationSummary {
+  id: string;
+  title: string | null;
+  userPrompt: string;
+  genre: string;
+  mood: string;
+  isFavorite: boolean;
+  audioFile: string | null;
+  createdAt: Date;
+}
+
+/** Filtres pour la liste des générations. */
+export interface GenerationFilters {
+  search?: string;
+  genre?: string;
+  favoritesOnly?: boolean;
+  sortOrder?: "recent" | "oldest";
+}
+
+/**
+ * Server Action — Récupère la liste des générations avec filtres.
+ */
+export async function getGenerations(
+  filters: GenerationFilters = {}
+): Promise<GenerationSummary[]> {
+  const where: Record<string, unknown> = {};
+
+  if (filters.favoritesOnly) {
+    where.isFavorite = true;
+  }
+
+  if (filters.genre) {
+    where.genre = filters.genre;
+  }
+
+  if (filters.search) {
+    where.OR = [
+      { title: { contains: filters.search } },
+      { userPrompt: { contains: filters.search } },
+    ];
+  }
+
+  const generations = await db.generation.findMany({
+    where,
+    select: {
+      id: true,
+      title: true,
+      userPrompt: true,
+      genre: true,
+      mood: true,
+      isFavorite: true,
+      audioFile: true,
+      createdAt: true,
+    },
+    orderBy: {
+      createdAt: filters.sortOrder === "oldest" ? "asc" : "desc",
+    },
+  });
+
+  return generations;
+}
+
+const deleteGenerationSchema = z.object({
+  id: z.string().min(1, "L'identifiant est requis"),
+});
+
+export type DeleteActionResult =
+  | { success: true }
+  | { success: false; error: string };
+
+/**
+ * Server Action — Supprime une génération et son fichier audio associé.
+ */
+export async function deleteGeneration(
+  input: z.infer<typeof deleteGenerationSchema>
+): Promise<DeleteActionResult> {
+  const parsed = deleteGenerationSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues.map((i) => i.message).join(", "),
+    };
+  }
+
+  try {
+    const generation = await db.generation.findUnique({
+      where: { id: parsed.data.id },
+      select: { id: true, audioFile: true },
+    });
+
+    if (!generation) {
+      return { success: false, error: "Génération introuvable" };
+    }
+
+    // Suppression du fichier audio si existant
+    if (generation.audioFile) {
+      const { unlink } = await import("fs/promises");
+      const path = await import("path");
+      const filePath = path.join(process.cwd(), "public", generation.audioFile);
+      try {
+        await unlink(filePath);
+      } catch {
+        // Fichier déjà supprimé ou introuvable, on continue
+      }
+    }
+
+    await db.generation.delete({ where: { id: parsed.data.id } });
+
+    revalidatePath("/(dashboard)");
+
+    return { success: true };
+  } catch (error) {
+    console.error("[deleteGeneration] Error:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: `Erreur inattendue : ${message}` };
+  }
+}
+
+/**
+ * Server Action — Récupère une génération complète par son ID.
+ */
+export async function getGenerationById(
+  id: string
+): Promise<GenerationData | null> {
+  const generation = await db.generation.findUnique({
+    where: { id },
+  });
+
+  if (!generation) return null;
+
+  const sunoSettings: SunoSettings = generation.advancedSettings
+    ? JSON.parse(generation.advancedSettings)
+    : { vocalGender: "Male", weirdness: 50, styleInfluence: 50 };
+
+  return {
+    id: generation.id,
+    title: generation.title ?? "Sans titre",
+    lyrics: generation.lyrics,
+    positivePrompt: generation.positivePrompt,
+    negativePrompt: generation.negativePrompt,
+    sunoSettings,
+    wordCount: generation.wordCount ?? 0,
+    characterCount: generation.characterCount ?? 0,
+    sectionCount: generation.sectionCount ?? 0,
+    estimatedDuration: generation.estimatedDuration ?? "—",
+  };
 }

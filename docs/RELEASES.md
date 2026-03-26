@@ -2,6 +2,14 @@
 
 ---
 
+## v0.5.0 — Phase 4 : Historique & Favoris *(26 mars 2026)*
+
+Panneau latéral (sidebar) avec historique complet des générations : cards avec titre, badges genre/mood colorés, date, boutons favori/supprimer. Filtres fonctionnels : recherche texte, genre, favoris, tri date. Chargement d'une génération depuis la sidebar vers la zone principale. Server Actions : `toggleFavorite`, `deleteGeneration`, `getGenerations`, `getGenerationById`. 72 tests, lint + build OK.
+
+➜ [Release Notes](releases/RELEASE_NOTES_v0.5.0.md) · [Changelog](changelogs/CHANGELOG_v0.5.0_PHASE4_HISTORIQUE_FAVORIS.md)
+
+---
+
 ## v0.4.0 — Phase 3 : Génération IA *(25 mars 2026)*
 
 Génération IA fonctionnelle de bout en bout : Context Builder + API DeepSeek → titre, lyrics structurées, positive/negative prompts et réglages Suno (Vocal Gender, Weirdness, Style Influence). Documentation Suno exhaustive (~1 200 lignes, 4 guides). Audit et correction des données musicales (tags, structures, règles). 59 tests, lint + build OK.

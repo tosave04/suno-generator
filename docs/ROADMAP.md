@@ -1,6 +1,6 @@
 # 🗺️ Roadmap — Suno Generator
 
-> **Dernière mise à jour :** 25 mars 2026
+> **Dernière mise à jour :** 26 mars 2026
 
 ---
 
@@ -12,7 +12,7 @@
 | **Phase 1** | Données musicales | ✅ Terminée | Corpus de genres, moods, styles |
 | **Phase 2** | Interface de composition | ✅ Terminée | UI principale + sélecteurs |
 | **Phase 3** | Génération IA | ✅ Terminée | Context Builder + DeepSeek |
-| **Phase 4** | Historique & favoris | ⬜ À faire | Sidebar, filtres, favoris |
+| **Phase 4** | Historique & favoris | ✅ Terminée | Sidebar, filtres, favoris |
 | **Phase 5** | Upload audio | ⬜ À faire | Upload MP3/WAV |
 | **Phase 6** | Polish & Stats | ⬜ À faire | Statistiques, UX, tests |
 
@@ -111,18 +111,19 @@
 
 ---
 
-## Phase 4 — Historique & favoris
+## Phase 4 — Historique & favoris ✅ *Terminée*
 
 **Objectif :** Panneau latéral avec historique filtrable et système de favoris.
 
-- [ ] Créer `components/sidebar/sidebar.tsx` — Container principal
-- [ ] Créer `components/sidebar/sidebar-filters.tsx` — Filtres
-- [ ] Créer `components/sidebar/generation-card.tsx` — Card de génération
-- [ ] Créer `lib/actions/favorite.ts` — Server Action toggle favori
-- [ ] Créer `lib/actions/generation.ts` — Ajout `deleteGeneration`
-- [ ] Chargement d'une génération depuis la sidebar vers la zone principale
-- [ ] Filtres fonctionnels : recherche, genre, favoris, tri
-- [ ] Tests : filtres, toggle favori
+- [x] Créer `components/sidebar/sidebar.tsx` — Container principal avec chargement des générations
+- [x] Créer `components/sidebar/sidebar-filters.tsx` — Recherche texte, filtre genre, filtre favoris, tri date
+- [x] Créer `components/sidebar/generation-card.tsx` — Card avec titre, badges genre/mood, date, boutons favori/supprimer
+- [x] Créer `lib/actions/favorite.ts` — Server Action `toggleFavorite` avec validation Zod
+- [x] Créer `lib/actions/generation.ts` — Ajout `getGenerations` (filtres), `deleteGeneration`, `getGenerationById`
+- [x] Chargement d'une génération depuis la sidebar vers la zone principale
+- [x] Filtres fonctionnels : recherche, genre, favoris, tri (récent/ancien)
+- [x] Intégration sidebar dans le layout Dashboard (sidebar + main content flex)
+- [x] Tests : 13 tests sidebar (rendu, interactions, filtres) — 72 tests au total
 
 **Livrable :** Historique navigable avec recherche, filtres et favoris.
 
