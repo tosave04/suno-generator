@@ -2,7 +2,7 @@
 
 > Application de composition musicale assistée par IA, générant des lyrics et prompts optimisés pour [Suno](https://suno.com).
 
-**Version :** `1.0.0` · **Statut :** v1.0 — Application complète · **Licence :** Privé
+**Version :** `1.1.0` · **Statut :** v1.1 — Enrichissement Musical & Transparence IA · **Licence :** Privé
 
 ---
 
@@ -19,15 +19,18 @@ Suno Generator est une application web qui permet de créer des chansons de haut
 
 | Fonctionnalité | Description |
 |---|---|
-| **Composition assistée** | Sélection de genre, mood, style d'écriture, tempo, langue, etc. |
+| **Composition assistée** | Sélection de genre, mood, style d'écriture, tempo, langue, atmosphère, etc. |
+| **26 genres musicaux** | Pop, Rock, Hip-Hop, Jazz, K-Pop, Celtic, Afroworld, Disco, Indian, Japanese… |
+| **12 langues** | Anglais, Français, Espagnol, Portugais, Japonais, Coréen, Russe, Hindi, Arabe, Chinois… |
+| **11 atmosphères culturelles** | Arabic, Asian, African, Latin, Western, European, Indian, Nordic, Russian, Slavic, Hybrid |
 | **Génération IA** | Lyrics + prompts Suno via DeepSeek (raisonnement avancé) |
+| **Transparence IA** | Onglet "Prompt IA" pour visualiser/copier le prompt système DeepSeek |
 | **Historique & favoris** | Sauvegarde des générations en BDD avec système de favoris |
 | **Filtres & recherche** | Panneau latéral filtrable (genre, favoris, fichier audio associé…) |
 | **Upload audio** | Association de fichiers MP3/WAV aux générations |
 | **Dashboard stats** | KPIs, top genres/moods, activité récente, stats par génération |
 | **Responsive** | Interface adaptée mobile avec sidebar collapsible |
 | **Accessibilité** | ARIA, navigation clavier, landmarks sémantiques |
-| **Contexte musical expert** | Base de données de règles musicales par genre et époque |
 
 ## 🛠️ Stack technique
 

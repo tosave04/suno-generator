@@ -32,6 +32,7 @@ model Generation {
   positivePrompt   String
   negativePrompt   String?
   advancedSettings String?
+  systemPrompt     String?
 
   // Métadonnées
   isFavorite  Boolean @default(false)

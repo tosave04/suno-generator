@@ -3,11 +3,13 @@
 import { GENRES } from "@/lib/data/genres";
 
 const GENRE_EMOJIS: Record<string, string> = {
-  pop: "🎤", rock: "🎸", "hip-hop": "🎧", jazz: "🎷",
-  electronic: "🎹", "r&b": "🎵", country: "🤠", classical: "🎻",
+  pop: "🎤", rock: "🎸", hiphop: "🎧", jazz: "🎷",
+  electronic: "🎹", rnb: "🎵", country: "🤠", classical: "🎻",
   metal: "🤘", folk: "🪕", reggae: "🌴", latin: "💃",
   blues: "🎺", funk: "🕺", soul: "✨", indie: "🌙",
-  punk: "⚡", ambient: "🌊",
+  punk: "⚡", ambient: "🌊", kpop: "💖", "16bit": "👾",
+  celtic: "☘️", afroworld: "🥁", disco: "💿",
+  middleeastern: "🏜️", indian: "🐘", japanese: "🎋",
 };
 
 interface GenreSelectorProps {

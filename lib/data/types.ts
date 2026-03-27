@@ -48,6 +48,19 @@ export interface SunoTag {
   usage: string;
 }
 
+/** Ambiance culturelle pour colorer la musique */
+export interface AtmosphereData {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  scales: string[];
+  keyInstruments: string[];
+  characteristics: string[];
+  promptKeywords: string[];
+  avoidKeywords: string[];
+}
+
 /** Règle de théorie musicale transversale */
 export interface MusicRule {
   id: string;

@@ -1,6 +1,6 @@
 # 🗺️ Roadmap — Suno Generator
 
-> **Dernière mise à jour :** 26 mars 2026
+> **Dernière mise à jour :** 27 mars 2026
 
 ---
 
@@ -15,6 +15,7 @@
 | **Phase 4** | Historique & favoris | ✅ Terminée | Sidebar, filtres, favoris |
 | **Phase 5** | Upload audio | ✅ Terminée | Upload MP3/WAV |
 | **Phase 6** | Polish & Stats | ✅ Terminée | Statistiques, UX, tests |
+| **v1.1** | Enrichissement musical | ✅ Terminée | Genres, langues, atmosphères, transparence IA |
 
 ---
 
@@ -174,3 +175,24 @@
 | Historique & favoris | Phase 4 | Semaine 8 |
 | Upload audio | Phase 5 | Semaine 9 |
 | **v1.0 Release** | Phase 6 | **Semaine 10-11** |
+
+---
+
+## v1.1 — Enrichissement Musical & Transparence IA ✅ *Terminée*
+
+**Objectif :** Enrichir le corpus musical, ajouter des atmosphères culturelles et offrir la transparence sur les prompts IA.
+
+- [x] Ajout de 8 nouveaux genres musicaux (K-Pop, 16-Bit, Celtic, Afroworld, Disco, Middle Eastern, Indian, Japanese) — 26 genres au total
+- [x] Ajout de 4 langues (Russe, Hindi, Arabe, Chinois) — 12 langues au total
+- [x] Correction des clés et émojis du genre-selector pour compatibilité Windows
+- [x] Création du système d'atmosphères culturelles — `lib/data/atmospheres.ts` (11 atmosphères)
+- [x] Interface `AtmosphereData` dans `lib/data/types.ts`
+- [x] Composant `atmosphere-selector.tsx` (toggle badges)
+- [x] Intégration atmosphères dans le Context Builder (`buildAtmosphereContext()`)
+- [x] Schéma Zod mis à jour (`atmosphere: z.string().optional()`)
+- [x] Nouveau champ `systemPrompt` dans le schéma Prisma
+- [x] Onglet "Prompt IA" dans le résultat de génération (affichage + copie)
+- [x] Mise à jour SPECIFICATIONS.md (26 genres, 12 langues, 11 atmosphères)
+- [x] 95 tests, lint + build OK
+
+**Livrable :** Corpus élargi, atmosphères culturelles, transparence totale sur les prompts IA.

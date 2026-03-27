@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Music, Copy, Check, Hash, Type, LayoutList, Clock } from "lucide-react";
+import { Music, Copy, Check, Hash, Type, LayoutList, Clock, Terminal } from "lucide-react";
 import type { SunoSettings } from "@/lib/actions/generation";
 import { AudioUpload } from "@/components/composition/audio-upload";
 
-const TABS = ["Lyrics", "Réglages"] as const;
+const TABS = ["Lyrics", "Réglages", "Prompt IA"] as const;
 type Tab = (typeof TABS)[number];
 
 /** État vide : aucune génération encore */
@@ -25,6 +25,7 @@ export function GenerationResult({
   positivePrompt,
   negativePrompt,
   sunoSettings,
+  systemPrompt,
   audioFile,
   onAudioChange,
   wordCount,
@@ -38,6 +39,7 @@ export function GenerationResult({
   positivePrompt: string;
   negativePrompt: string | null;
   sunoSettings: SunoSettings;
+  systemPrompt: string | null;
   audioFile: string | null;
   onAudioChange: (audioFile: string | null) => void;
   wordCount: number;
@@ -93,6 +95,9 @@ export function GenerationResult({
             negativePrompt={negativePrompt}
             sunoSettings={sunoSettings}
           />
+        )}
+        {activeTab === "Prompt IA" && (
+          <SystemPromptView systemPrompt={systemPrompt} />
         )}
       </div>
 
@@ -247,6 +252,33 @@ function SettingsView({
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function SystemPromptView({ systemPrompt }: { systemPrompt: string | null }) {
+  if (!systemPrompt) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+        <Terminal className="h-6 w-6 text-muted-foreground opacity-50" />
+        <p className="text-sm text-muted-foreground">
+          Prompt système non disponible pour cette génération
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 p-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">
+          Prompt système envoyé à DeepSeek
+        </span>
+        <CopyButton text={systemPrompt} label="Prompt" />
+      </div>
+      <pre className="text-xs leading-relaxed whitespace-pre-wrap rounded-md bg-background p-3 max-h-96 overflow-y-auto text-foreground font-mono">
+        {systemPrompt}
+      </pre>
     </div>
   );
 }

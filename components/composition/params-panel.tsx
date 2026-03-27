@@ -17,6 +17,10 @@ const LANGUAGES = [
   { value: "ko", label: "한국어", countryCode: "kr" },
   { value: "de", label: "Deutsch", countryCode: "de" },
   { value: "it", label: "Italiano", countryCode: "it" },
+  { value: "ru", label: "Русский", countryCode: "ru" },
+  { value: "hi", label: "हिन्दी", countryCode: "in" },
+  { value: "ar", label: "العربية", countryCode: "sa" },
+  { value: "zh", label: "中文", countryCode: "cn" },
 ] as const;
 
 const VOCAL_STYLES = [

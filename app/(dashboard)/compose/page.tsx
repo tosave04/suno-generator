@@ -8,6 +8,7 @@ import { MoodSelector } from "@/components/composition/mood-selector";
 import { StyleSelector } from "@/components/composition/style-selector";
 import { ParamsPanel } from "@/components/composition/params-panel";
 import { PromptInput } from "@/components/composition/prompt-input";
+import { AtmosphereSelector } from "@/components/composition/atmosphere-selector";
 import {
   GenerationOutput,
   GenerationResult,
@@ -26,6 +27,7 @@ export default function CompositionPage() {
   const [tempo, setTempo] = useState<string | null>(null);
   const [language, setLanguage] = useState("en");
   const [vocalStyle, setVocalStyle] = useState<string | null>(null);
+  const [atmosphere, setAtmosphere] = useState<string | null>(null);
   const [userPrompt, setUserPrompt] = useState("");
 
   const [result, setResult] = useState<GenerationData | null>(null);
@@ -50,6 +52,7 @@ export default function CompositionPage() {
         tempo: tempo ?? undefined,
         language,
         vocalStyle: vocalStyle ?? undefined,
+        atmosphere: atmosphere ?? undefined,
       });
 
       if (response.success) {
@@ -105,6 +108,7 @@ export default function CompositionPage() {
               onVocalStyleChange={(v) => setVocalStyle(v || null)}
             />
             <PromptInput value={userPrompt} onChange={setUserPrompt} />
+            <AtmosphereSelector value={atmosphere} onChange={setAtmosphere} />
           </section>
 
           {/* CTA Générer */}
@@ -145,6 +149,7 @@ export default function CompositionPage() {
                 positivePrompt={result.positivePrompt}
                 negativePrompt={result.negativePrompt}
                 sunoSettings={result.sunoSettings}
+                systemPrompt={result.systemPrompt}
                 audioFile={result.audioFile}
                 onAudioChange={handleAudioChange}
                 wordCount={result.wordCount}

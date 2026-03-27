@@ -2,6 +2,14 @@
 
 ---
 
+## v1.1.0 — Enrichissement Musical & Transparence IA *(27 mars 2026)*
+
+8 nouveaux genres (K-Pop, 16-Bit, Celtic, Afroworld, Disco, Middle Eastern, Indian, Japanese → 26 total). 4 nouvelles langues (Russe, Hindi, Arabe, Chinois → 12 total). Système d'atmosphères culturelles (11 ambiances : Arabic, Asian, African, Latin, Western, European, Indian, Hybrid, Nordic, Russian, Slavic). Onglet "Prompt IA" pour visualiser/copier le prompt système DeepSeek. Émojis Windows-compatible. 95 tests, lint + build OK.
+
+➜ [Release Notes](releases/RELEASE_NOTES_v1.1.0.md) · [Changelog](changelogs/CHANGELOG_v1.1.0_ENRICHISSEMENT_MUSICAL.md)
+
+---
+
 ## v1.0.0 — Phase 6 : Polish, Stats & Tests *(26 mars 2026)*
 
 Dashboard de statistiques (KPIs, top genres/moods, activité 7j). Stats par génération (mots, caractères, sections, durée). Responsive mobile complet (sidebar collapsible, grilles adaptatives). Accessibilité ARIA (sélecteurs, onglets, navigation). Pagination sidebar (20 items/page). Animations CSS (fade-in, transitions). Tests E2E Playwright (4 scénarios). 95 tests unitaires, lint + build OK.

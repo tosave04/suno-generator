@@ -8,6 +8,7 @@ import { MOODS } from "@/lib/data/moods";
 import { WRITING_STYLES } from "@/lib/data/styles";
 import { SUNO_TAGS } from "@/lib/data/suno-tags";
 import { MUSIC_RULES } from "@/lib/data/music-rules";
+import { ATMOSPHERES } from "@/lib/data/atmospheres";
 import type { CreateGenerationInput } from "@/lib/schemas/generation";
 
 /** Construit le prompt système complet pour DeepSeek. */
@@ -15,6 +16,9 @@ export function buildSystemPrompt(params: CreateGenerationInput): string {
   const genreData = GENRES.find((g) => g.id === params.genre);
   const moodData = MOODS.find((m) => m.id === params.mood);
   const styleData = WRITING_STYLES.find((s) => s.id === params.style);
+  const atmosphereData = params.atmosphere
+    ? ATMOSPHERES.find((a) => a.id === params.atmosphere)
+    : undefined;
 
   const sections: string[] = [];
 
@@ -49,6 +53,11 @@ export function buildSystemPrompt(params: CreateGenerationInput): string {
   // --- Style vocal ---
   if (params.vocalStyle) {
     sections.push(`VOCAL STYLE: Write lyrics suited for a "${params.vocalStyle}" vocal delivery. Adapt phrasing, register, and breathing patterns accordingly.`);
+  }
+
+  // --- Ambiance culturelle ---
+  if (atmosphereData) {
+    sections.push(buildAtmosphereContext(atmosphereData));
   }
 
   // --- Tags Suno ---
@@ -99,6 +108,19 @@ function buildStyleContext(style: (typeof WRITING_STYLES)[number]): string {
   ].join("\n");
 }
 
+function buildAtmosphereContext(atmosphere: (typeof ATMOSPHERES)[number]): string {
+  return [
+    `CULTURAL ATMOSPHERE: ${atmosphere.name}`,
+    `Description: ${atmosphere.description}`,
+    `Scales/modes to incorporate: ${atmosphere.scales.join(", ")}`,
+    `Characteristic instruments: ${atmosphere.keyInstruments.join(", ")}`,
+    `Sonic characteristics: ${atmosphere.characteristics.join(", ")}`,
+    `Prompt keywords to weave in: ${atmosphere.promptKeywords.join(", ")}`,
+    `Keywords to AVOID: ${atmosphere.avoidKeywords.join(", ")}`,
+    `IMPORTANT: Blend this cultural atmosphere into the genre and mood. Include atmosphere-specific instruments and scales in the positivePrompt. The cultural color should enhance, not override, the chosen genre.`,
+  ].join("\n");
+}
+
 function buildLanguageContext(language: string): string {
   const LANGUAGE_MAP: Record<string, string> = {
     en: "English",
@@ -109,6 +131,10 @@ function buildLanguageContext(language: string): string {
     ko: "Korean",
     de: "German",
     it: "Italian",
+    ru: "Russian",
+    hi: "Hindi",
+    ar: "Arabic",
+    zh: "Chinese",
   };
   const langName = LANGUAGE_MAP[language] ?? "English";
   return `LANGUAGE: Write all lyrics in ${langName}. The positive and negative prompts MUST always be in English (Suno requirement).`;

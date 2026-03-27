@@ -16,6 +16,7 @@ export const createGenerationSchema = z.object({
   tempo: z.string().optional(),
   language: z.string().default("en"),
   vocalStyle: z.string().optional(),
+  atmosphere: z.string().optional(),
   songStructure: z.string().optional(),
   title: z.string().max(100, "Le titre ne doit pas dépasser 100 caractères").optional(),
 });

@@ -28,6 +28,7 @@ export interface GenerationData {
   positivePrompt: string;
   negativePrompt: string | null;
   sunoSettings: SunoSettings;
+  systemPrompt: string | null;
   audioFile: string | null;
   wordCount: number;
   characterCount: number;
@@ -82,6 +83,7 @@ export async function createGeneration(
         positivePrompt: response.positivePrompt,
         negativePrompt: response.negativePrompt ?? null,
         advancedSettings: serializedSettings,
+        systemPrompt,
         wordCount: stats.wordCount,
         characterCount: stats.characterCount,
         sectionCount: stats.sectionCount,
@@ -103,6 +105,7 @@ export async function createGeneration(
         positivePrompt: generation.positivePrompt,
         negativePrompt: generation.negativePrompt,
         sunoSettings: response.sunoSettings,
+        systemPrompt,
         audioFile: null,
         wordCount: stats.wordCount,
         characterCount: stats.characterCount,
@@ -291,6 +294,7 @@ export async function getGenerationById(
     positivePrompt: generation.positivePrompt,
     negativePrompt: generation.negativePrompt,
     sunoSettings,
+    systemPrompt: generation.systemPrompt ?? null,
     audioFile: generation.audioFile ?? null,
     wordCount: generation.wordCount ?? 0,
     characterCount: generation.characterCount ?? 0,

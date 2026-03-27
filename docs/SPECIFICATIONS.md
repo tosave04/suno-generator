@@ -270,13 +270,14 @@ La base SQLite est adaptée pour un usage mono-utilisateur avec quelques centain
 
 | Composant | Type | Options |
 |-----------|------|---------|
-| Genre selector | Grid de cards cliquables | Pop, Rock, Hip-Hop, Jazz, Electronic, R&B, Country, Classical, Metal, Folk, Reggae, Latin, Blues, Funk, Soul, Indie, Punk, Ambient |
+| Genre selector | Grid de cards cliquables | Pop, Rock, Hip-Hop, Jazz, Electronic, R&B, Country, Classical, Metal, Folk, Reggae, Latin, Blues, Funk, Soul, Indie, Punk, Ambient, K-Pop, 16-Bit, Celtic, Afro/World, Disco/Dance, Middle Eastern, Indian, Japanese (26 genres) |
 | Sub-genre selector | Dropdown dynamique | Dépend du genre sélectionné |
 | Mood selector | Grid de badges | Joyful, Melancholic, Energetic, Calm, Aggressive, Romantic, Dark, Uplifting, Nostalgic, Epic |
 | Style d'écriture | Radio group | Poetic, Storytelling, Direct, Abstract, Conversational, Anthem |
 | Tempo | Slider ou boutons | Very Slow, Slow, Medium, Fast, Very Fast |
-| Langue | Dropdown | English, French, Spanish, Portuguese, Japanese, Korean, German, Italian |
+| Langue | Dropdown | English, French, Spanish, Portuguese, Japanese, Korean, German, Italian, Russian, Hindi, Arabic, Chinese (12 langues) |
 | Style vocal | Dropdown | Male, Female, Duet, Choir, Whisper, Rap, Opera |
+| Ambiance culturelle | Grid de badges (optionnel) | Arabique/Moyen-Orient, Asiatique, Africaine, Latine, Occidentale moderne, Européenne classique/folk, Indienne, Hybride/Cinématique, Nordique, Russe, Slave (11 ambiances) |
 
 #### 4.3.2 Zone de texte libre
 
@@ -349,7 +350,10 @@ Paramètres utilisateur
     │
     ├── Langue             ──→  Conventions linguistiques, structure phrasé
     │
-    └── Style vocal        ──→  Indications vocales pour le prompt Suno
+    ├── Style vocal        ──→  Indications vocales pour le prompt Suno
+    │
+    └── Ambiance culturelle ──→ Couleur culturelle (gammes, instruments,
+                                 textures sonores) intégrée au prompt Suno
     
     ═══════════════════════════════════
     
@@ -407,6 +411,24 @@ interface WritingStyleData {
   sunoFormatting: string[];          // Conseils de formatage pour Suno
 }
 ```
+
+#### 5.2.4 Ambiances culturelles (`atmospheres.ts`)
+
+```typescript
+interface AtmosphereData {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  scales: string[];                  // Gammes/modes caractéristiques
+  keyInstruments: string[];          // Instruments typiques
+  characteristics: string[];        // Caractéristiques sonores
+  promptKeywords: string[];          // Mots-clés pour le prompt Suno
+  avoidKeywords: string[];           // Mots-clés à éviter
+}
+```
+
+8 ambiances disponibles : Arabique/Moyen-Orient, Asiatique, Africaine, Latine, Occidentale moderne, Européenne classique/folk, Indienne, Hybride/Cinématique, Nordique, Russe, Slave. L'ambiance est optionnelle et ajoute une couleur culturelle qui s'intègre au genre et au mood choisis sans les remplacer.
 
 ### 5.3 Intégration DeepSeek API
 
