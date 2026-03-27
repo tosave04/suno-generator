@@ -21,31 +21,53 @@ const LANGUAGES = [
   { value: "hi", label: "हिन्दी", countryCode: "in" },
   { value: "ar", label: "العربية", countryCode: "sa" },
   { value: "zh", label: "中文", countryCode: "cn" },
+  { value: "qya", label: "Elfique", countryCode: null },
 ] as const;
 
 const VOCAL_STYLES = [
-  "Male", "Female", "Duet", "Choir", "Whisper", "Rap", "Opera",
+  { value: "Male", icon: "🧑" },
+  { value: "Female", icon: "👩" },
+  { value: "Duet", icon: "👫" },
+  { value: "Choir", icon: "🎶" },
+  { value: "Whisper", icon: "🤫" },
+  { value: "Rap", icon: "🎤" },
+  { value: "Opera", icon: "🎭" },
+  { value: "Robotic", icon: "🤖" },
 ] as const;
 
 interface ParamsPanelProps {
   tempo: string | null;
-  language: string;
+  languages: string[];
   vocalStyle: string | null;
+  songLength: "short" | "standard";
   onTempoChange: (tempo: string) => void;
-  onLanguageChange: (language: string) => void;
-  onVocalStyleChange: (vocalStyle: string) => void;
+  onLanguagesChange: (languages: string[]) => void;
+  onVocalStyleChange: (vocalStyle: string | null) => void;
+  onSongLengthChange: (songLength: "short" | "standard") => void;
 }
 
 export function ParamsPanel({
   tempo,
-  language,
+  languages,
   vocalStyle,
+  songLength,
   onTempoChange,
-  onLanguageChange,
+  onLanguagesChange,
   onVocalStyleChange,
+  onSongLengthChange,
 }: ParamsPanelProps) {
+  function handleToggleLanguage(langValue: string) {
+    if (languages.includes(langValue)) {
+      if (languages.length > 1) {
+        onLanguagesChange(languages.filter((l) => l !== langValue));
+      }
+    } else if (languages.length < 2) {
+      onLanguagesChange([...languages, langValue]);
+    }
+  }
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {/* Tempo */}
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-muted-foreground">Tempo</label>
@@ -69,33 +91,47 @@ export function ParamsPanel({
         </div>
       </div>
 
-      {/* Langue */}
+      {/* Langue (1-2) */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground">Langue</label>
+        <label className="text-xs font-medium text-muted-foreground">
+          Langue <span className="text-muted-foreground/60">(1-2 max)</span>
+        </label>
         <div className="flex flex-wrap gap-1.5">
           {LANGUAGES.map((lang) => {
-            const isSelected = language === lang.value;
+            const isSelected = languages.includes(lang.value);
+            const isDisabled = !isSelected && languages.length >= 2;
             return (
               <button
                 key={lang.value}
                 type="button"
-                onClick={() => onLanguageChange(lang.value)}
+                onClick={() => handleToggleLanguage(lang.value)}
+                disabled={isDisabled}
                 title={lang.label}
-                className={`flex items-center gap-1 rounded-md px-2 py-1.5 text-xs transition-colors cursor-pointer ${
+                className={`flex items-center gap-1 rounded-md px-2 py-1.5 text-xs transition-colors ${
+                  isDisabled
+                    ? "cursor-not-allowed opacity-40 bg-background text-muted-foreground border border-border"
+                    : "cursor-pointer"
+                } ${
                   isSelected
                     ? "font-medium bg-accent text-accent-foreground"
-                    : "bg-background text-muted-foreground hover:bg-muted border border-border"
+                    : isDisabled
+                      ? ""
+                      : "bg-background text-muted-foreground hover:bg-muted border border-border"
                 }`}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`https://flagcdn.com/20x15/${lang.countryCode}.png`}
-                  srcSet={`https://flagcdn.com/40x30/${lang.countryCode}.png 2x`}
-                  width={20}
-                  height={15}
-                  alt={lang.label}
-                  className="rounded-sm object-cover"
-                />
+                {lang.countryCode ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={`https://flagcdn.com/20x15/${lang.countryCode}.png`}
+                    srcSet={`https://flagcdn.com/40x30/${lang.countryCode}.png 2x`}
+                    width={20}
+                    height={15}
+                    alt={lang.label}
+                    className="rounded-sm object-cover"
+                  />
+                ) : (
+                  <span className="text-sm">🧝</span>
+                )}
                 <span>{lang.label}</span>
               </button>
             );
@@ -103,21 +139,59 @@ export function ParamsPanel({
         </div>
       </div>
 
-      {/* Style vocal */}
+      {/* Style vocal (icons) */}
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-muted-foreground">Style vocal</label>
-        <select
-          value={vocalStyle ?? ""}
-          onChange={(e) => onVocalStyleChange(e.target.value)}
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-        >
-          <option value="">Aucune préférence</option>
-          {VOCAL_STYLES.map((vs) => (
-            <option key={vs} value={vs}>
-              {vs}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-wrap gap-1.5">
+          {VOCAL_STYLES.map((vs) => {
+            const isSelected = vocalStyle === vs.value;
+            return (
+              <button
+                key={vs.value}
+                type="button"
+                onClick={() => onVocalStyleChange(isSelected ? null : vs.value)}
+                title={vs.value}
+                className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs transition-colors cursor-pointer ${
+                  isSelected
+                    ? "font-medium bg-accent text-accent-foreground"
+                    : "bg-background text-muted-foreground hover:bg-muted border border-border"
+                }`}
+              >
+                <span className="text-base">{vs.icon}</span>
+                <span>{vs.value}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Durée */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-muted-foreground">Durée</label>
+        <div className="inline-flex rounded-md border border-border overflow-hidden">
+          <button
+            type="button"
+            onClick={() => onSongLengthChange("short")}
+            className={`px-3 py-1.5 text-xs transition-colors ${
+              songLength === "short"
+                ? "font-medium text-accent-foreground bg-accent"
+                : "text-muted-foreground bg-background hover:bg-muted"
+            } border-r border-border`}
+          >
+            Courte
+          </button>
+          <button
+            type="button"
+            onClick={() => onSongLengthChange("standard")}
+            className={`px-3 py-1.5 text-xs transition-colors ${
+              songLength === "standard"
+                ? "font-medium text-accent-foreground bg-accent"
+                : "text-muted-foreground bg-background hover:bg-muted"
+            }`}
+          >
+            Standard
+          </button>
+        </div>
       </div>
     </div>
   );

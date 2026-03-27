@@ -2,7 +2,7 @@
 
 > Application de composition musicale assistée par IA, générant des lyrics et prompts optimisés pour [Suno](https://suno.com).
 
-**Version :** `1.1.0` · **Statut :** v1.1 — Enrichissement Musical & Transparence IA · **Licence :** Privé
+**Version :** `1.2.0` · **Statut :** v1.2 — Composition Avancée · **Licence :** Privé
 
 ---
 
@@ -19,10 +19,11 @@ Suno Generator est une application web qui permet de créer des chansons de haut
 
 | Fonctionnalité | Description |
 |---|---|
-| **Composition assistée** | Sélection de genre, mood, style d'écriture, tempo, langue, atmosphère, etc. |
+| **Composition assistée** | Sélection de genre (1-2 mix), mood (optionnel), style d'écriture, tempo, langue (1-2 mix), atmosphère, etc. |
 | **26 genres musicaux** | Pop, Rock, Hip-Hop, Jazz, K-Pop, Celtic, Afroworld, Disco, Indian, Japanese… |
-| **12 langues** | Anglais, Français, Espagnol, Portugais, Japonais, Coréen, Russe, Hindi, Arabe, Chinois… |
-| **11 atmosphères culturelles** | Arabic, Asian, African, Latin, Western, European, Indian, Nordic, Russian, Slavic, Hybrid |
+| **13 langues** | Anglais, Français, Espagnol, Portugais, Japonais, Coréen, Russe, Hindi, Arabe, Chinois, Elfique… |
+| **12 atmosphères culturelles** | Arabic, Asian, African, Latin, Western, European, Indian, Nordic, Russian, Slavic, Hybrid, Futuristic |
+| **8 styles vocaux** | Male, Female, Duet, Choir, Whisper, Rap, Opera, Robotic — sélection par icônes |
 | **Génération IA** | Lyrics + prompts Suno via DeepSeek (raisonnement avancé) |
 | **Transparence IA** | Onglet "Prompt IA" pour visualiser/copier le prompt système DeepSeek |
 | **Historique & favoris** | Sauvegarde des générations en BDD avec système de favoris |

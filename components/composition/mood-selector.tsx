@@ -9,13 +9,15 @@ const MOOD_EMOJIS: Record<string, string> = {
 
 interface MoodSelectorProps {
   value: string | null;
-  onChange: (moodId: string) => void;
+  onChange: (moodId: string | null) => void;
 }
 
 export function MoodSelector({ value, onChange }: MoodSelectorProps) {
   return (
     <div className="space-y-2" role="group" aria-label="Mood / Atmosphère">
-      <label className="text-xs font-medium text-muted-foreground">Mood / Atmosphère</label>
+      <label className="text-xs font-medium text-muted-foreground">
+        Mood / Atmosphère <span className="text-muted-foreground/60">(optionnel)</span>
+      </label>
       <div className="flex flex-wrap gap-2">
         {MOODS.map((mood) => {
           const isSelected = value === mood.id;
@@ -23,7 +25,7 @@ export function MoodSelector({ value, onChange }: MoodSelectorProps) {
             <button
               key={mood.id}
               type="button"
-              onClick={() => onChange(mood.id)}
+              onClick={() => onChange(isSelected ? null : mood.id)}
               aria-pressed={isSelected}
               className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
                 isSelected

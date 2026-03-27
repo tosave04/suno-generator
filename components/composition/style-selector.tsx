@@ -13,6 +13,8 @@ interface StyleSelectorProps {
 }
 
 export function StyleSelector({ value, onChange }: StyleSelectorProps) {
+  const selectedStyle = WRITING_STYLES.find((s) => s.id === value);
+
   return (
     <fieldset className="space-y-2">
       <legend className="text-xs font-medium text-muted-foreground">Style d&apos;écriture</legend>
@@ -44,6 +46,9 @@ export function StyleSelector({ value, onChange }: StyleSelectorProps) {
           );
         })}
       </div>
+      {selectedStyle && (
+        <p className="text-xs text-muted-foreground italic">{selectedStyle.description}</p>
+      )}
     </fieldset>
   );
 }

@@ -21,13 +21,14 @@ import {
 import { Sidebar } from "@/components/sidebar/sidebar";
 
 export default function CompositionPage() {
-  const [genre, setGenre] = useState<string | null>(null);
+  const [genres, setGenres] = useState<string[]>([]);
   const [mood, setMood] = useState<string | null>(null);
   const [style, setStyle] = useState<string | null>(null);
   const [tempo, setTempo] = useState<string | null>(null);
-  const [language, setLanguage] = useState("en");
+  const [languages, setLanguages] = useState<string[]>(["en"]);
   const [vocalStyle, setVocalStyle] = useState<string | null>(null);
   const [atmosphere, setAtmosphere] = useState<string | null>(null);
+  const [songLength, setSongLength] = useState<"short" | "standard">("standard");
   const [userPrompt, setUserPrompt] = useState("");
 
   const [result, setResult] = useState<GenerationData | null>(null);
@@ -37,22 +38,23 @@ export default function CompositionPage() {
   const [isPending, startTransition] = useTransition();
 
   const canGenerate =
-    genre && mood && style && userPrompt.trim().length >= 10 && !isPending;
+    genres.length > 0 && style && userPrompt.trim().length >= 10 && !isPending;
 
   function handleGenerate() {
-    if (!genre || !mood || !style) return;
+    if (!genres.length || !style) return;
     setError(null);
 
     startTransition(async () => {
       const response = await createGeneration({
         userPrompt,
-        genre,
-        mood,
+        genres,
+        mood: mood ?? undefined,
         style,
         tempo: tempo ?? undefined,
-        language,
+        languages,
         vocalStyle: vocalStyle ?? undefined,
         atmosphere: atmosphere ?? undefined,
+        songLength,
       });
 
       if (response.success) {
@@ -96,16 +98,18 @@ export default function CompositionPage() {
           <section className="space-y-4">
             <h2 className="text-xl font-semibold text-foreground">Composer</h2>
 
-            <GenreSelector value={genre} onChange={setGenre} />
+            <GenreSelector value={genres} onChange={setGenres} />
             <MoodSelector value={mood} onChange={setMood} />
             <StyleSelector value={style} onChange={setStyle} />
             <ParamsPanel
               tempo={tempo}
-              language={language}
+              languages={languages}
               vocalStyle={vocalStyle}
+              songLength={songLength}
               onTempoChange={setTempo}
-              onLanguageChange={setLanguage}
-              onVocalStyleChange={(v) => setVocalStyle(v || null)}
+              onLanguagesChange={setLanguages}
+              onVocalStyleChange={setVocalStyle}
+              onSongLengthChange={setSongLength}
             />
             <PromptInput value={userPrompt} onChange={setUserPrompt} />
             <AtmosphereSelector value={atmosphere} onChange={setAtmosphere} />

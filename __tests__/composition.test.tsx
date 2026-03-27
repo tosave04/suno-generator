@@ -12,23 +12,23 @@ import { WRITING_STYLES } from "@/lib/data/styles";
 
 describe("GenreSelector", () => {
   it("renders all genres", () => {
-    render(<GenreSelector value={null} onChange={() => {}} />);
+    render(<GenreSelector value={[]} onChange={() => {}} />);
     for (const genre of GENRES) {
       expect(screen.getByText(genre.name)).toBeInTheDocument();
     }
   });
 
   it("highlights selected genre", () => {
-    render(<GenreSelector value="rock" onChange={() => {}} />);
+    render(<GenreSelector value={["rock"]} onChange={() => {}} />);
     const rockButton = screen.getByText("Rock").closest("button");
     expect(rockButton?.className).toContain("border-accent");
   });
 
   it("calls onChange on click", () => {
     const onChange = vi.fn();
-    render(<GenreSelector value={null} onChange={onChange} />);
+    render(<GenreSelector value={[]} onChange={onChange} />);
     fireEvent.click(screen.getByText("Pop"));
-    expect(onChange).toHaveBeenCalledWith("pop");
+    expect(onChange).toHaveBeenCalledWith(["pop"]);
   });
 });
 
@@ -70,31 +70,35 @@ describe("StyleSelector", () => {
 });
 
 describe("ParamsPanel", () => {
-  it("renders tempo buttons, language and vocal selects", () => {
+  it("renders tempo buttons, language and vocal styles", () => {
     render(
       <ParamsPanel
         tempo={null}
-        language="en"
+        languages={["en"]}
         vocalStyle={null}
+        songLength="standard"
         onTempoChange={() => {}}
-        onLanguageChange={() => {}}
+        onLanguagesChange={() => {}}
         onVocalStyleChange={() => {}}
+        onSongLengthChange={() => {}}
       />,
     );
     expect(screen.getByText("Medium")).toBeInTheDocument();
     expect(screen.getByText("English")).toBeInTheDocument();
-    expect(screen.getByText("Aucune préférence")).toBeInTheDocument();
+    expect(screen.getByText("Male")).toBeInTheDocument();
   });
 
   it("highlights active tempo", () => {
     render(
       <ParamsPanel
         tempo="Fast"
-        language="en"
+        languages={["en"]}
         vocalStyle={null}
+        songLength="standard"
         onTempoChange={() => {}}
-        onLanguageChange={() => {}}
+        onLanguagesChange={() => {}}
         onVocalStyleChange={() => {}}
+        onSongLengthChange={() => {}}
       />,
     );
     const fastButton = screen.getByText("Fast").closest("button")!;

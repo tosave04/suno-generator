@@ -9,14 +9,21 @@ export const createGenerationSchema = z.object({
     .string()
     .min(10, "La description doit contenir au moins 10 caractères")
     .max(2000, "La description ne doit pas dépasser 2000 caractères"),
-  genre: z.string().min(1, "Le genre est requis"),
+  genres: z
+    .array(z.string().min(1))
+    .min(1, "Au moins un genre est requis")
+    .max(2, "Maximum 2 genres"),
   subGenre: z.string().optional(),
-  mood: z.string().min(1, "Le mood est requis"),
+  mood: z.string().optional(),
   style: z.string().min(1, "Le style d'écriture est requis"),
   tempo: z.string().optional(),
-  language: z.string().default("en"),
+  languages: z
+    .array(z.string().min(1))
+    .min(1, "Au moins une langue est requise")
+    .max(2, "Maximum 2 langues"),
   vocalStyle: z.string().optional(),
   atmosphere: z.string().optional(),
+  songLength: z.enum(["short", "standard"]).default("standard"),
   songStructure: z.string().optional(),
   title: z.string().max(100, "Le titre ne doit pas dépasser 100 caractères").optional(),
 });
@@ -38,7 +45,7 @@ export const generationResponseSchema = z.object({
   positivePrompt: z.string().min(1, "Le prompt positif est requis"),
   negativePrompt: z.string().nullable(),
   sunoSettings: z.object({
-    vocalGender: z.enum(["Male", "Female"]),
+    vocalGender: z.enum(["Male", "Female"]).catch("Male"),
     weirdness: z.number().min(0).max(100),
     styleInfluence: z.number().min(0).max(100),
   }),

@@ -11,6 +11,7 @@ export interface GenreData {
   subGenres: string[];
   typicalBpm: { min: number; max: number };
   typicalStructure: string[];
+  shortStructure: string[];
   keyInstruments: string[];
   vocalCharacteristics: string[];
   historicalContext: string;

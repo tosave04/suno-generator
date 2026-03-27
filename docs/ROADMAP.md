@@ -16,6 +16,7 @@
 | **Phase 5** | Upload audio | ✅ Terminée | Upload MP3/WAV |
 | **Phase 6** | Polish & Stats | ✅ Terminée | Statistiques, UX, tests |
 | **v1.1** | Enrichissement musical | ✅ Terminée | Genres, langues, atmosphères, transparence IA |
+| **v1.2** | Composition avancée | ✅ Terminée | Multi-genre/langue, mood optionnel, structures courtes, vocal étendu |
 
 ---
 
@@ -196,3 +197,24 @@
 - [x] 95 tests, lint + build OK
 
 **Livrable :** Corpus élargi, atmosphères culturelles, transparence totale sur les prompts IA.
+
+---
+
+## v1.2 — Composition Avancée ✅ *Terminée*
+
+**Objectif :** Enrichir la composition avec des sélections multiples, un mood optionnel, des structures courtes et un style vocal étendu.
+
+- [x] Multi-genre (1-2 max) avec mix et instruction `GENRE MIX` dans le prompt
+- [x] Multi-langue (1-2 max) avec alternance naturelle dans les lyrics
+- [x] Langue elfique (Quenya) avec phonologie finnoise
+- [x] Mood optionnel (toggle deselect, schéma Prisma nullable)
+- [x] Structures courtes (`shortStructure`) pour les 26 genres + toggle songLength
+- [x] Style vocal par icônes (8 styles : Male, Female, Duet, Choir, Whisper, Rap, Opera, Robotic)
+- [x] Style "Robotic" avec instructions vocoder/auto-tune dédiées
+- [x] Description du style d'écriture affichée sous la sélection
+- [x] Tempo renforcé avec BPM spécifiques dans `positivePrompt`
+- [x] Ambiance "Futuriste" 🚀 (12 atmosphères au total)
+- [x] Fallback `vocalGender` robuste (`.catch("Male")`)
+- [x] 95 tests, lint + build OK
+
+**Livrable :** Composition multi-choix, structures courtes, 8 styles vocaux, ambiance futuriste.

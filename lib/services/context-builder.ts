@@ -13,8 +13,10 @@ import type { CreateGenerationInput } from "@/lib/schemas/generation";
 
 /** Construit le prompt système complet pour DeepSeek. */
 export function buildSystemPrompt(params: CreateGenerationInput): string {
-  const genreData = GENRES.find((g) => g.id === params.genre);
-  const moodData = MOODS.find((m) => m.id === params.mood);
+  const genresData = params.genres
+    .map((id) => GENRES.find((g) => g.id === id))
+    .filter((g): g is (typeof GENRES)[number] => g !== undefined);
+  const moodData = params.mood ? MOODS.find((m) => m.id === params.mood) : undefined;
   const styleData = WRITING_STYLES.find((s) => s.id === params.style);
   const atmosphereData = params.atmosphere
     ? ATMOSPHERES.find((a) => a.id === params.atmosphere)
@@ -27,9 +29,14 @@ export function buildSystemPrompt(params: CreateGenerationInput): string {
     `You are an expert songwriter and music producer specializing in creating lyrics and prompts for Suno AI music generation (2026 format). You produce professional, creative, and emotionally resonant content.`
   );
 
-  // --- Genre ---
-  if (genreData) {
-    sections.push(buildGenreContext(genreData));
+  // --- Genre(s) ---
+  for (const genreData of genresData) {
+    sections.push(buildGenreContext(genreData, params.songLength));
+  }
+  if (genresData.length === 2) {
+    sections.push(
+      `GENRE MIX: Blend the two genres above into a cohesive hybrid. Take the main elements from each (instruments, rhythms, vocal characteristics) and fuse them. The positivePrompt should mention both genres.`
+    );
   }
 
   // --- Mood ---
@@ -44,15 +51,15 @@ export function buildSystemPrompt(params: CreateGenerationInput): string {
 
   // --- Tempo ---
   if (params.tempo) {
-    sections.push(`TEMPO: Target tempo is "${params.tempo}". Adapt syllable density and rhythmic flow accordingly.`);
+    sections.push(buildTempoContext(params.tempo));
   }
 
-  // --- Langue ---
-  sections.push(buildLanguageContext(params.language));
+  // --- Langue(s) ---
+  sections.push(buildLanguageContext(params.languages));
 
   // --- Style vocal ---
   if (params.vocalStyle) {
-    sections.push(`VOCAL STYLE: Write lyrics suited for a "${params.vocalStyle}" vocal delivery. Adapt phrasing, register, and breathing patterns accordingly.`);
+    sections.push(buildVocalStyleContext(params.vocalStyle));
   }
 
   // --- Ambiance culturelle ---
@@ -60,11 +67,16 @@ export function buildSystemPrompt(params: CreateGenerationInput): string {
     sections.push(buildAtmosphereContext(atmosphereData));
   }
 
+  // --- Song length ---
+  if (params.songLength === "short") {
+    sections.push(`SONG LENGTH: Short song. Keep it concise: 100-150 words max. Use the short structure provided. Aim for 1-2 minutes.`);
+  }
+
   // --- Tags Suno ---
   sections.push(buildSunoTagsContext());
 
   // --- Règles musicales ---
-  sections.push(buildMusicRulesContext(params.genre));
+  sections.push(buildMusicRulesContext(params.genres[0]));
 
   // --- Format de sortie ---
   sections.push(buildOutputFormat());
@@ -72,13 +84,14 @@ export function buildSystemPrompt(params: CreateGenerationInput): string {
   return sections.join("\n\n");
 }
 
-function buildGenreContext(genre: (typeof GENRES)[number]): string {
+function buildGenreContext(genre: (typeof GENRES)[number], songLength: "short" | "standard"): string {
+  const structure = songLength === "short" ? genre.shortStructure : genre.typicalStructure;
   return [
     `GENRE: ${genre.name}`,
     `Description: ${genre.description}`,
     `Sub-genres available: ${genre.subGenres.join(", ")}`,
     `Typical BPM: ${genre.typicalBpm.min}-${genre.typicalBpm.max}`,
-    `Typical structure: ${genre.typicalStructure.join(" → ")}`,
+    `Song structure to follow: ${structure.join(" → ")}`,
     `Key instruments: ${genre.keyInstruments.join(", ")}`,
     `Vocal characteristics: ${genre.vocalCharacteristics.join(", ")}`,
     `Historical context: ${genre.historicalContext}`,
@@ -121,7 +134,7 @@ function buildAtmosphereContext(atmosphere: (typeof ATMOSPHERES)[number]): strin
   ].join("\n");
 }
 
-function buildLanguageContext(language: string): string {
+function buildLanguageContext(languages: string[]): string {
   const LANGUAGE_MAP: Record<string, string> = {
     en: "English",
     fr: "French",
@@ -135,9 +148,51 @@ function buildLanguageContext(language: string): string {
     hi: "Hindi",
     ar: "Arabic",
     zh: "Chinese",
+    qya: "Elvish (Quenya)",
   };
-  const langName = LANGUAGE_MAP[language] ?? "English";
-  return `LANGUAGE: Write all lyrics in ${langName}. The positive and negative prompts MUST always be in English (Suno requirement).`;
+  const langNames = languages.map((l) => LANGUAGE_MAP[l] ?? "English");
+
+  if (languages.includes("qya")) {
+    const otherLangs = langNames.filter((n) => n !== "Elvish (Quenya)");
+    const elvishNote = `Quenya is an Elvish language created by J.R.R. Tolkien, phonetically very close to Finnish. Use Finnish-inspired phonology: soft vowels (a, e, i, o, u), liquid consonants (l, r, n, m), diphthongs. Avoid harsh consonants. Words should sound ethereal and flowing.`;
+    if (otherLangs.length > 0) {
+      return `LANGUAGE: Write lyrics mixing ${otherLangs.join(" and ")} with Elvish (Quenya) passages. ${elvishNote} The positive and negative prompts MUST always be in English (Suno requirement).`;
+    }
+    return `LANGUAGE: Write all lyrics in Elvish (Quenya). ${elvishNote} The positive and negative prompts MUST always be in English (Suno requirement).`;
+  }
+
+  if (langNames.length === 2) {
+    return `LANGUAGE: Write lyrics mixing ${langNames[0]} and ${langNames[1]}. Alternate naturally between the two languages (e.g., verses in one, chorus in the other, or mixed within sections). The positive and negative prompts MUST always be in English (Suno requirement).`;
+  }
+  return `LANGUAGE: Write all lyrics in ${langNames[0]}. The positive and negative prompts MUST always be in English (Suno requirement).`;
+}
+
+function buildVocalStyleContext(vocalStyle: string): string {
+  if (vocalStyle === "Robotic") {
+    return [
+      `VOCAL STYLE: Robotic / Synthetic voice.`,
+      `Write lyrics suited for a robotic, synthesized vocal delivery.`,
+      `- Use short, clipped phrases and repetitive patterns`,
+      `- Favor mechanical rhythm over natural prosody`,
+      `- Include vocoder/auto-tune-friendly syllables (sustained vowels, simple consonants)`,
+      `- Lyrics can reference technology, circuits, binary, digital themes (but not mandatory)`,
+      `IMPORTANT for positivePrompt: MUST include "vocoder, robotic voice, synthesized vocals, auto-tune" descriptors.`,
+      `IMPORTANT for negativePrompt: include "no natural vocals, no acoustic voice".`,
+    ].join("\n");
+  }
+  return `VOCAL STYLE: Write lyrics suited for a "${vocalStyle}" vocal delivery. Adapt phrasing, register, and breathing patterns accordingly.`;
+}
+
+function buildTempoContext(tempo: string): string {
+  const tempoDetails: Record<string, string> = {
+    "Very Slow": "50-70 BPM. Extremely slow and deliberate. Long sustained notes, spacious phrasing. Include 'slow tempo, 60 BPM' in positivePrompt.",
+    "Slow": "70-90 BPM. Relaxed pace, breathing room. Ballad-friendly. Include 'slow tempo, 80 BPM' in positivePrompt.",
+    "Medium": "90-120 BPM. Standard comfortable pace. Include 'mid-tempo, 110 BPM' in positivePrompt.",
+    "Fast": "120-150 BPM. Energetic, driving rhythm. Include 'uptempo, 135 BPM' in positivePrompt.",
+    "Very Fast": "150+ BPM. High energy, rapid delivery. Include 'fast tempo, 160 BPM' in positivePrompt.",
+  };
+  const detail = tempoDetails[tempo] ?? `Target tempo: ${tempo}.`;
+  return `TEMPO: ${detail}\nIMPORTANT: Always include the specific BPM value in the positivePrompt to ensure Suno respects the tempo. Adapt syllable density and rhythmic flow accordingly.`;
 }
 
 function buildSunoTagsContext(): string {
@@ -177,7 +232,7 @@ The JSON must have this exact structure:
   "positivePrompt": "Concise Suno 'Style of Music' descriptor. Comma-separated: genre, sub-genre, mood, vocal type, tempo/BPM, key/scale, instruments, production style, era/influences. Always in English. Max 200 chars.",
   "negativePrompt": "Suno 'Exclude from Song' field. EVERY element MUST be prefixed with 'no'. Example: 'no autotune, no screaming, no heavy bass'. Always in English. Max 120 chars. null if not needed.",
   "sunoSettings": {
-    "vocalGender": "Male or Female — pick the best fit for the song",
+    "vocalGender": "Male",
     "weirdness": 30,
     "styleInfluence": 70
   }
@@ -188,7 +243,7 @@ FIELD RULES:
 - lyrics: Use proper Suno tags for EVERY section. Target 200-300 words (Suno 2-4 min).
 - positivePrompt: This goes into Suno's "Style of Music" field. Include BPM, key, instruments, vocal style, production quality — all as concise comma-separated descriptors. Do NOT repeat the genre if already obvious.
 - negativePrompt: This goes into Suno's "Exclude from Song" field. EVERY single element MUST start with "no" (e.g., "no autotune, no screaming"). Never omit the "no" prefix.
-- sunoSettings.vocalGender: "Male" or "Female" based on the vocalStyle or best match for the genre/mood.
+- sunoSettings.vocalGender: MUST be exactly "Male" or "Female" — no other value is accepted. For duets, choirs, or mixed vocals, pick the dominant or lead vocal gender. Default to "Male" if unsure.
 - sunoSettings.weirdness: 0-100. Low (0-20) = conventional/safe. Medium (30-50) = balanced creativity. High (60-100) = experimental/avant-garde. Choose based on genre and mood.
 - sunoSettings.styleInfluence: 0-100. Low (0-30) = loose interpretation. Medium (40-70) = balanced. High (80-100) = strictly follows style description. Higher for specific genres, lower for experimental.
 

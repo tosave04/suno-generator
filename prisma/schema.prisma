@@ -20,7 +20,7 @@ model Generation {
   userPrompt    String
   genre         String
   subGenre      String?
-  mood          String
+  mood          String?
   style         String
   tempo         String?
   language      String  @default("en")

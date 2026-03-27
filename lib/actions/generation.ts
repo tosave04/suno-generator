@@ -71,12 +71,12 @@ export async function createGeneration(
       data: {
         title: response.title,
         userPrompt: params.userPrompt,
-        genre: params.genre,
+        genre: params.genres.join(","),
         subGenre: params.subGenre ?? null,
-        mood: params.mood,
+        mood: params.mood ?? null,
         style: params.style,
         tempo: params.tempo ?? null,
-        language: params.language,
+        language: params.languages.join(","),
         vocalStyle: response.sunoSettings.vocalGender,
         songStructure: params.songStructure ?? null,
         lyrics: response.lyrics,
@@ -88,7 +88,7 @@ export async function createGeneration(
         characterCount: stats.characterCount,
         sectionCount: stats.sectionCount,
         estimatedDuration: stats.estimatedDuration,
-        detectedLanguage: params.language,
+        detectedLanguage: params.languages[0],
       },
     });
 
@@ -135,7 +135,7 @@ export interface GenerationSummary {
   title: string | null;
   userPrompt: string;
   genre: string;
-  mood: string;
+  mood: string | null;
   isFavorite: boolean;
   audioFile: string | null;
   createdAt: Date;

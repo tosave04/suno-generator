@@ -19,11 +19,11 @@ describe("createGenerationSchema", () => {
   it("valide un input complet correct", () => {
     const input = {
       userPrompt: "A sad love song about rainy nights",
-      genre: "pop",
+      genres: ["pop"],
       mood: "melancholic",
       style: "poetic",
       tempo: "Slow",
-      language: "en",
+      languages: ["en"],
       vocalStyle: "Female",
     };
     const result = createGenerationSchema.safeParse(input);
@@ -33,34 +33,33 @@ describe("createGenerationSchema", () => {
   it("valide un input minimal (champs optionnels absents)", () => {
     const input = {
       userPrompt: "An upbeat dance track",
-      genre: "electronic",
-      mood: "energetic",
+      genres: ["electronic"],
       style: "direct",
+      languages: ["en"],
     };
     const result = createGenerationSchema.safeParse(input);
     expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.language).toBe("en"); // défaut
-    }
   });
 
   it("rejette un userPrompt trop court", () => {
     const input = {
       userPrompt: "Short",
-      genre: "pop",
+      genres: ["pop"],
       mood: "joyful",
       style: "direct",
+      languages: ["en"],
     };
     const result = createGenerationSchema.safeParse(input);
     expect(result.success).toBe(false);
   });
 
-  it("rejette un genre vide", () => {
+  it("rejette un genres vide", () => {
     const input = {
       userPrompt: "A beautiful love song",
-      genre: "",
+      genres: [],
       mood: "romantic",
       style: "poetic",
+      languages: ["en"],
     };
     const result = createGenerationSchema.safeParse(input);
     expect(result.success).toBe(false);
@@ -69,9 +68,10 @@ describe("createGenerationSchema", () => {
   it("rejette un titre trop long", () => {
     const input = {
       userPrompt: "A song about the ocean",
-      genre: "ambient",
+      genres: ["ambient"],
       mood: "calm",
       style: "poetic",
+      languages: ["en"],
       title: "A".repeat(101),
     };
     const result = createGenerationSchema.safeParse(input);
@@ -142,7 +142,7 @@ describe("generationResponseSchema", () => {
     expect(generationResponseSchema.safeParse(response).success).toBe(false);
   });
 
-  it("rejette un vocalGender invalide", () => {
+  it("fallback vocalGender invalide vers Male", () => {
     const response = {
       title: "Test",
       lyrics: "[Verse]\nHello",
@@ -150,7 +150,11 @@ describe("generationResponseSchema", () => {
       negativePrompt: null,
       sunoSettings: { vocalGender: "Robot", weirdness: 50, styleInfluence: 50 },
     };
-    expect(generationResponseSchema.safeParse(response).success).toBe(false);
+    const result = generationResponseSchema.safeParse(response);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.sunoSettings.vocalGender).toBe("Male");
+    }
   });
 
   it("rejette une réponse sans titre", () => {
@@ -171,10 +175,11 @@ describe("buildSystemPrompt", () => {
   it("inclut le genre dans le contexte", () => {
     const prompt = buildSystemPrompt({
       userPrompt: "A happy pop song",
-      genre: "pop",
+      genres: ["pop"],
       mood: "joyful",
       style: "direct",
-      language: "en",
+      languages: ["en"],
+      songLength: "standard",
     });
     expect(prompt).toContain("GENRE: Pop");
     expect(prompt).toContain("catchy");
@@ -183,10 +188,11 @@ describe("buildSystemPrompt", () => {
   it("inclut le mood dans le contexte", () => {
     const prompt = buildSystemPrompt({
       userPrompt: "A sad ballad",
-      genre: "rock",
+      genres: ["rock"],
       mood: "melancholic",
       style: "poetic",
-      language: "en",
+      languages: ["en"],
+      songLength: "standard",
     });
     expect(prompt).toContain("MOOD: Melancholic");
   });
@@ -194,10 +200,11 @@ describe("buildSystemPrompt", () => {
   it("inclut les instructions de langue", () => {
     const prompt = buildSystemPrompt({
       userPrompt: "Une chanson française",
-      genre: "pop",
+      genres: ["pop"],
       mood: "joyful",
       style: "poetic",
-      language: "fr",
+      languages: ["fr"],
+      songLength: "standard",
     });
     expect(prompt).toContain("French");
   });
@@ -205,11 +212,12 @@ describe("buildSystemPrompt", () => {
   it("inclut le style vocal si spécifié", () => {
     const prompt = buildSystemPrompt({
       userPrompt: "Opera song",
-      genre: "classical",
+      genres: ["classical"],
       mood: "epic",
       style: "poetic",
-      language: "en",
+      languages: ["en"],
       vocalStyle: "Opera",
+      songLength: "standard",
     });
     expect(prompt).toContain("Opera");
   });
@@ -217,10 +225,11 @@ describe("buildSystemPrompt", () => {
   it("inclut le format de sortie JSON", () => {
     const prompt = buildSystemPrompt({
       userPrompt: "Any song",
-      genre: "pop",
+      genres: ["pop"],
       mood: "joyful",
       style: "direct",
-      language: "en",
+      languages: ["en"],
+      songLength: "standard",
     });
     expect(prompt).toContain("OUTPUT FORMAT");
     expect(prompt).toContain("JSON");
@@ -229,10 +238,11 @@ describe("buildSystemPrompt", () => {
   it("inclut les tags Suno", () => {
     const prompt = buildSystemPrompt({
       userPrompt: "Test",
-      genre: "pop",
+      genres: ["pop"],
       mood: "joyful",
       style: "direct",
-      language: "en",
+      languages: ["en"],
+      songLength: "standard",
     });
     expect(prompt).toContain("SUNO TAGS REFERENCE");
     expect(prompt).toContain("[Chorus]");
@@ -241,10 +251,11 @@ describe("buildSystemPrompt", () => {
   it("inclut les instructions Suno Settings dans le format", () => {
     const prompt = buildSystemPrompt({
       userPrompt: "Test",
-      genre: "pop",
+      genres: ["pop"],
       mood: "joyful",
       style: "direct",
-      language: "en",
+      languages: ["en"],
+      songLength: "standard",
     });
     expect(prompt).toContain("sunoSettings");
     expect(prompt).toContain("vocalGender");

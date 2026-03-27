@@ -2,6 +2,14 @@
 
 ---
 
+## v1.2.0 — Composition Avancée *(27 mars 2026)*
+
+Multi-genre (1-2 mix), multi-langue (1-2 mix + Elfique/Quenya), mood optionnel, structures courtes par genre, style vocal par icônes (8 styles dont Robotic 🤖), ambiance Futuriste 🚀 (12 atmosphères), tempo renforcé avec BPM, fallback vocalGender robuste, description du style affiché. 95 tests, lint + build OK.
+
+➜ [Release Notes](releases/RELEASE_NOTES_v1.2.0.md) · [Changelog](changelogs/CHANGELOG_v1.2.0_COMPOSITION_AVANCEE.md)
+
+---
+
 ## v1.1.0 — Enrichissement Musical & Transparence IA *(27 mars 2026)*
 
 8 nouveaux genres (K-Pop, 16-Bit, Celtic, Afroworld, Disco, Middle Eastern, Indian, Japanese → 26 total). 4 nouvelles langues (Russe, Hindi, Arabe, Chinois → 12 total). Système d'atmosphères culturelles (11 ambiances : Arabic, Asian, African, Latin, Western, European, Indian, Hybrid, Nordic, Russian, Slavic). Onglet "Prompt IA" pour visualiser/copier le prompt système DeepSeek. Émojis Windows-compatible. 95 tests, lint + build OK.

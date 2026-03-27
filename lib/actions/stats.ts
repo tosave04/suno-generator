@@ -47,7 +47,8 @@ export async function getGlobalStats(): Promise<GlobalStats> {
   // Top moods (top 5)
   const moodCounts = new Map<string, number>();
   for (const g of allGenerations) {
-    moodCounts.set(g.mood, (moodCounts.get(g.mood) ?? 0) + 1);
+    const mood = g.mood ?? "none";
+    moodCounts.set(mood, (moodCounts.get(mood) ?? 0) + 1);
   }
   const topMoods = [...moodCounts.entries()]
     .map(([mood, count]) => ({ mood, count }))

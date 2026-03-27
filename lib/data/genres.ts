@@ -33,6 +33,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus", "Outro"],
     keyInstruments: [
       "synth",
       "electric guitar",
@@ -101,6 +102,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus", "Outro"],
     keyInstruments: [
       "electric guitar",
       "bass guitar",
@@ -167,6 +169,7 @@ export const GENRES: GenreData[] = [
       "Hook",
       "Outro",
     ],
+    shortStructure: ["Verse", "Hook", "Verse", "Hook"],
     keyInstruments: [
       "808 bass",
       "hi-hats",
@@ -226,6 +229,7 @@ export const GENRES: GenreData[] = [
       "Verse",
       "Outro",
     ],
+    shortStructure: ["Verse", "Solo", "Verse"],
     keyInstruments: [
       "saxophone",
       "trumpet",
@@ -286,6 +290,7 @@ export const GENRES: GenreData[] = [
       "Drop",
       "Outro",
     ],
+    shortStructure: ["Intro", "Drop", "Break", "Drop"],
     keyInstruments: [
       "synthesizer",
       "drum machine",
@@ -353,6 +358,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus"],
     keyInstruments: [
       "electric piano",
       "synth pad",
@@ -415,6 +421,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus"],
     keyInstruments: [
       "acoustic guitar",
       "steel guitar",
@@ -477,6 +484,7 @@ export const GENRES: GenreData[] = [
       "Recapitulation",
       "Coda",
     ],
+    shortStructure: ["Exposition", "Recapitulation", "Coda"],
     keyInstruments: [
       "piano",
       "violin",
@@ -546,6 +554,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus", "Outro"],
     keyInstruments: [
       "distorted guitar",
       "bass guitar",
@@ -604,6 +613,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus"],
     keyInstruments: [
       "acoustic guitar",
       "harmonica",
@@ -664,6 +674,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus"],
     keyInstruments: [
       "rhythm guitar (skank)",
       "bass guitar",
@@ -723,6 +734,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus"],
     keyInstruments: [
       "congas",
       "bongos",
@@ -780,6 +792,7 @@ export const GENRES: GenreData[] = [
       "Verse (12-bar)",
       "Outro",
     ],
+    shortStructure: ["Verse (12-bar)", "Verse (12-bar)", "Outro"],
     keyInstruments: [
       "electric guitar",
       "harmonica",
@@ -838,6 +851,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus"],
     keyInstruments: [
       "bass guitar (slap)",
       "drums",
@@ -897,6 +911,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus"],
     keyInstruments: [
       "organ",
       "piano",
@@ -956,6 +971,7 @@ export const GENRES: GenreData[] = [
       "Bridge",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus"],
     keyInstruments: [
       "guitar",
       "synth",
@@ -1016,6 +1032,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus"],
     keyInstruments: [
       "electric guitar (power chords)",
       "bass guitar",
@@ -1070,6 +1087,7 @@ export const GENRES: GenreData[] = [
       "Decay",
       "Resolution",
     ],
+    shortStructure: ["Opening", "Climax", "Resolution"],
     keyInstruments: [
       "synthesizer",
       "field recordings",
@@ -1134,6 +1152,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Pre-Chorus", "Chorus", "Verse", "Chorus"],
     keyInstruments: [
       "synth",
       "808 bass",
@@ -1194,6 +1213,7 @@ export const GENRES: GenreData[] = [
       "Theme A (variation)",
       "Outro",
     ],
+    shortStructure: ["Theme A", "Theme B", "Theme A (variation)"],
     keyInstruments: [
       "square wave synth",
       "triangle wave bass",
@@ -1254,6 +1274,7 @@ export const GENRES: GenreData[] = [
       "Theme A (variation)",
       "Outro",
     ],
+    shortStructure: ["Theme A", "Theme B", "Theme A (variation)"],
     keyInstruments: [
       "fiddle",
       "tin whistle",
@@ -1318,6 +1339,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus"],
     keyInstruments: [
       "djembe",
       "talking drum",
@@ -1382,6 +1404,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus"],
     keyInstruments: [
       "bass guitar",
       "strings",
@@ -1445,6 +1468,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus"],
     keyInstruments: [
       "oud",
       "darbuka",
@@ -1508,6 +1532,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus"],
     keyInstruments: [
       "sitar",
       "tabla",
@@ -1573,6 +1598,7 @@ export const GENRES: GenreData[] = [
       "Chorus",
       "Outro",
     ],
+    shortStructure: ["Verse", "Chorus", "Verse", "Chorus", "Outro"],
     keyInstruments: [
       "koto",
       "shakuhachi",
