@@ -2,6 +2,14 @@
 
 ---
 
+## v1.3.0 — UX & Random Composition *(28 mars 2026)*
+
+Remplissage aléatoire intelligent (bouton Random) avec 1 194 prompts d'exemple et probabilités pondérées (26 genres, tempo, langues, styles). Effet "tirage de loto" animé. 4 composants extraits de params-panel (tempo, langue, vocal, durée). Dropdown genres amélioré avec badges ✕. Layout recomposé. Corrections hydration + boutons imbriqués. Lint + build OK.
+
+➜ [Release Notes](releases/RELEASE_NOTES_v1.3.0.md) · [Changelog](changelogs/CHANGELOG_v1.3.0_UX_RANDOM_COMPOSITION.md)
+
+---
+
 ## v1.2.0 — Composition Avancée *(27 mars 2026)*
 
 Multi-genre (1-2 mix), multi-langue (1-2 mix + Elfique/Quenya), mood optionnel, structures courtes par genre, style vocal par icônes (8 styles dont Robotic 🤖), ambiance Futuriste 🚀 (12 atmosphères), tempo renforcé avec BPM, fallback vocalGender robuste, description du style affiché. 95 tests, lint + build OK.

@@ -3,7 +3,6 @@ import { describe, it, expect, vi } from "vitest";
 import { GenreSelector } from "@/components/composition/genre-selector";
 import { MoodSelector } from "@/components/composition/mood-selector";
 import { StyleSelector } from "@/components/composition/style-selector";
-import { ParamsPanel } from "@/components/composition/params-panel";
 import { PromptInput } from "@/components/composition/prompt-input";
 import { GenerationOutput } from "@/components/composition/generation-output";
 import { GENRES } from "@/lib/data/genres";
@@ -66,43 +65,6 @@ describe("StyleSelector", () => {
     render(<StyleSelector value="poetic" onChange={() => {}} />);
     const poeticLabel = screen.getByText("Poetic").closest("label");
     expect(poeticLabel?.className).toContain("border-accent");
-  });
-});
-
-describe("ParamsPanel", () => {
-  it("renders tempo buttons, language and vocal styles", () => {
-    render(
-      <ParamsPanel
-        tempo={null}
-        languages={["en"]}
-        vocalStyle={null}
-        songLength="standard"
-        onTempoChange={() => {}}
-        onLanguagesChange={() => {}}
-        onVocalStyleChange={() => {}}
-        onSongLengthChange={() => {}}
-      />,
-    );
-    expect(screen.getByText("Medium")).toBeInTheDocument();
-    expect(screen.getByText("English")).toBeInTheDocument();
-    expect(screen.getByText("Male")).toBeInTheDocument();
-  });
-
-  it("highlights active tempo", () => {
-    render(
-      <ParamsPanel
-        tempo="Fast"
-        languages={["en"]}
-        vocalStyle={null}
-        songLength="standard"
-        onTempoChange={() => {}}
-        onLanguagesChange={() => {}}
-        onVocalStyleChange={() => {}}
-        onSongLengthChange={() => {}}
-      />,
-    );
-    const fastButton = screen.getByText("Fast").closest("button")!;
-    expect(fastButton.className).toContain("bg-accent");
   });
 });
 

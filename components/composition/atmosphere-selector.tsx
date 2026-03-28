@@ -10,10 +10,10 @@ interface AtmosphereSelectorProps {
 export function AtmosphereSelector({ value, onChange }: AtmosphereSelectorProps) {
   return (
     <div className="space-y-2" role="group" aria-label="Ambiance culturelle">
-      <label className="text-xs font-medium text-muted-foreground">
-        Ambiance culturelle <span className="text-muted-foreground/60">(optionnel)</span>
-      </label>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap justify-center gap-2">
+        <label className="rounded-full px-2.5 py-2 text-xs font-bold bg-muted text-muted-foreground">
+          Ambiance culturelle
+        </label>
         {ATMOSPHERES.map((atmo) => {
           const isSelected = value === atmo.id;
           return (

@@ -15,10 +15,10 @@ interface MoodSelectorProps {
 export function MoodSelector({ value, onChange }: MoodSelectorProps) {
   return (
     <div className="space-y-2" role="group" aria-label="Mood / Atmosphère">
-      <label className="text-xs font-medium text-muted-foreground">
-        Mood / Atmosphère <span className="text-muted-foreground/60">(optionnel)</span>
-      </label>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap justify-center gap-2">
+        <label className="rounded-full px-2.5 py-2 text-xs font-bold bg-muted text-muted-foreground">
+          Mood / Atmosphère
+        </label>
         {MOODS.map((mood) => {
           const isSelected = value === mood.id;
           return (
@@ -33,7 +33,7 @@ export function MoodSelector({ value, onChange }: MoodSelectorProps) {
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
-              <span>{MOOD_EMOJIS[mood.id] ?? "🎵"}</span>
+              <span className="text-sm">{MOOD_EMOJIS[mood.id] ?? "🎵"}</span>
               {mood.name}
             </button>
           );

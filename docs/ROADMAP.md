@@ -1,6 +1,6 @@
 # 🗺️ Roadmap — Suno Generator
 
-> **Dernière mise à jour :** 27 mars 2026
+> **Dernière mise à jour :** 28 mars 2026
 
 ---
 
@@ -17,6 +17,7 @@
 | **Phase 6** | Polish & Stats | ✅ Terminée | Statistiques, UX, tests |
 | **v1.1** | Enrichissement musical | ✅ Terminée | Genres, langues, atmosphères, transparence IA |
 | **v1.2** | Composition avancée | ✅ Terminée | Multi-genre/langue, mood optionnel, structures courtes, vocal étendu |
+| **v1.3** | UX & Random Composition | ✅ Terminée | Random fill intelligent, probabilités pondérées, modularité composants |
 
 ---
 
@@ -218,3 +219,25 @@
 - [x] 95 tests, lint + build OK
 
 **Livrable :** Composition multi-choix, structures courtes, 8 styles vocaux, ambiance futuriste.
+
+---
+
+## v1.3 — UX & Random Composition ✅ *Terminée*
+
+**Objectif :** Améliorer l'UX de composition avec un système de remplissage aléatoire intelligent et une refonte modulaire des composants.
+
+- [x] Extraction de 4 composants depuis params-panel : `TempoSelector`, `LanguageSelector`, `VocalStyleSelector`, `SongLengthSelector`
+- [x] Dropdown multi-select genres intégré dans la card coverflow (badges ✕, ouverture vers le haut)
+- [x] Réorganisation layout : Durée|Tempo (ligne 1), Langue|Style vocal (ligne 2, ratio 60/40)
+- [x] Homogénéisation des styles visuels entre tous les sélecteurs
+- [x] Bouton "Random" avec remplissage aléatoire de tous les champs
+- [x] 1 194 prompts d'exemple dans `lib/data/samples.ts`
+- [x] Module `lib/utils/random-composition.ts` avec probabilités pondérées (6 tables)
+- [x] 26 genres pondérés par popularité (GENRE_WEIGHTS)
+- [x] 8 constantes nommées pour toutes les probabilités
+- [x] Effet "tirage de loto" animé (10×50ms + décélération 100→200→500ms)
+- [x] Correction hydration mismatch (`suppressHydrationWarning`)
+- [x] Correction boutons HTML imbriqués (`span role="button"`)
+- [x] Lint + build OK
+
+**Livrable :** Random fill intelligent avec probabilités pondérées, composants modulaires, UX fluide.

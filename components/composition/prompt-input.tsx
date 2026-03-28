@@ -1,20 +1,30 @@
 "use client";
 
+import { useState, useCallback } from "react";
+import { Wand2 } from "lucide-react";
+import { SAMPLES } from "@/lib/data/samples";
+
 const MAX_CHARS = 2000;
 
-const EXAMPLES = [
-  "💡 Ballade romantique au coucher du soleil",
-  "💡 Hymne énergique pour le sport",
-  "💡 Chanson mélancolique sur la pluie en automne",
-  "💡 Track festive pour une nuit d'été",
-] as const;
+function pickRandom<T>(arr: readonly T[], count: number): T[] {
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+}
 
 interface PromptInputProps {
   value: string;
   onChange: (value: string) => void;
+  onRandomFill?: () => void;
+  isRandomizing?: boolean;
 }
 
-export function PromptInput({ value, onChange }: PromptInputProps) {
+export function PromptInput({ value, onChange, onRandomFill, isRandomizing }: PromptInputProps) {
+  const [examples, setExamples] = useState(() => pickRandom(SAMPLES, 3));
+
+  const refreshExamples = useCallback(() => {
+    setExamples(pickRandom(SAMPLES, 3));
+  }, []);
+
   return (
     <div className="space-y-1.5">
       <label className="text-xs font-medium text-muted-foreground">
@@ -33,15 +43,28 @@ export function PromptInput({ value, onChange }: PromptInputProps) {
       />
       <div className="flex items-center justify-between">
         {/* Exemples cliquables */}
-        <div className="flex flex-wrap gap-1.5">
-          {EXAMPLES.map((example) => (
+        <div className="flex flex-wrap gap-1.5 items-center">
+          {onRandomFill && (
             <button
-              key={example}
               type="button"
-              onClick={() => onChange(example.slice(2).trim())}
+              onClick={onRandomFill}
+              disabled={isRandomizing}
+              title="Remplir aléatoirement tous les champs"
+              className={`inline-flex items-center gap-1.5 rounded-lg border-2 border-accent/40 bg-accent/15 px-3.5 py-1.5 text-sm font-semibold text-accent shadow-sm transition-all hover:bg-accent/25 hover:border-accent/60 hover:shadow-md cursor-pointer ${isRandomizing ? "animate-pulse border-accent bg-accent/25 shadow-accent/20" : ""}`}
+            >
+              <Wand2 className={`h-4 w-4 ${isRandomizing ? "animate-spin" : ""}`} />
+              {isRandomizing ? "Tirage…" : "Random"}
+            </button>
+          )}
+          {examples.map((example, i) => (
+            <button
+              key={`${example}-${i}`}
+              type="button"
+              suppressHydrationWarning
+              onClick={() => { onChange(example); refreshExamples(); }}
               className="text-[10px] text-accent hover:underline"
             >
-              {example}
+              💡 {example.length > 80 ? `${example.slice(0, 80)}…` : example}
             </button>
           ))}
         </div>

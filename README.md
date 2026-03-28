@@ -2,7 +2,7 @@
 
 > Application de composition musicale assistée par IA, générant des lyrics et prompts optimisés pour [Suno](https://suno.com).
 
-**Version :** `1.2.0` · **Statut :** v1.2 — Composition Avancée · **Licence :** Privé
+**Version :** `1.3.0` · **Statut :** v1.3 — UX & Random Composition · **Licence :** Privé
 
 ---
 
@@ -29,6 +29,7 @@ Suno Generator est une application web qui permet de créer des chansons de haut
 | **Historique & favoris** | Sauvegarde des générations en BDD avec système de favoris |
 | **Filtres & recherche** | Panneau latéral filtrable (genre, favoris, fichier audio associé…) |
 | **Upload audio** | Association de fichiers MP3/WAV aux générations |
+| **Random Fill** | Remplissage aléatoire intelligent avec probabilités pondérées et effet "tirage de loto" |
 | **Dashboard stats** | KPIs, top genres/moods, activité récente, stats par génération |
 | **Responsive** | Interface adaptée mobile avec sidebar collapsible |
 | **Accessibilité** | ARIA, navigation clavier, landmarks sémantiques |
