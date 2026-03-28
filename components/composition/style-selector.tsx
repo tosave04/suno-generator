@@ -17,8 +17,7 @@ export function StyleSelector({ value, onChange }: StyleSelectorProps) {
 
   return (
     <fieldset className="space-y-2">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
-        <span className="flex items-center rounded-md px-3 py-2 text-sm border border-border bg-muted">Style d&apos;écriture :</span>
+      <div className="grid grid-cols-3 gap-2 lg:grid-cols-4 2xl:grid-cols-6">
         {WRITING_STYLES.map((style) => {
           const isSelected = value === style.id;
           return (

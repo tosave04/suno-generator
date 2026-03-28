@@ -19,6 +19,7 @@
 | **v1.2** | Composition avancée | ✅ Terminée | Multi-genre/langue, mood optionnel, structures courtes, vocal étendu |
 | **v1.3** | UX & Random Composition | ✅ Terminée | Random fill intelligent, probabilités pondérées, modularité composants |
 | **v1.4** | Structures & Durée | ✅ Terminée | 4 longueurs de structure par genre, sélecteur 4 options |
+| **v1.5** | Calculateur Suno Settings & Chaos | ✅ Terminée | Calculateur weirdness/styleInfluence, mood Chaos, labels Suno |
 
 ---
 

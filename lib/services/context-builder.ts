@@ -9,10 +9,17 @@ import { WRITING_STYLES } from "@/lib/data/styles";
 import { SUNO_TAGS } from "@/lib/data/suno-tags";
 import { MUSIC_RULES } from "@/lib/data/music-rules";
 import { ATMOSPHERES } from "@/lib/data/atmospheres";
+import { calculateSunoSettings, type CalculatedSettings } from "@/lib/services/settings-calculator";
 import type { CreateGenerationInput } from "@/lib/schemas/generation";
 
-/** Construit le prompt système complet pour DeepSeek. */
-export function buildSystemPrompt(params: CreateGenerationInput): string {
+/** Résultat du buildSystemPrompt : prompt + réglages calculés. */
+export interface BuildResult {
+  systemPrompt: string;
+  calculatedSettings: CalculatedSettings;
+}
+
+/** Construit le prompt système complet pour DeepSeek + calcule les réglages Suno. */
+export function buildSystemPrompt(params: CreateGenerationInput): BuildResult {
   const genresData = params.genres
     .map((id) => GENRES.find((g) => g.id === id))
     .filter((g): g is (typeof GENRES)[number] => g !== undefined);
@@ -82,10 +89,20 @@ export function buildSystemPrompt(params: CreateGenerationInput): string {
   // --- Règles musicales ---
   sections.push(buildMusicRulesContext(params.genres[0]));
 
-  // --- Format de sortie ---
-  sections.push(buildOutputFormat());
+  // --- Calcul des réglages Suno ---
+  const calculatedSettings = calculateSunoSettings(
+    params.genres,
+    params.mood ?? undefined,
+    params.style,
+  );
 
-  return sections.join("\n\n");
+  // --- Format de sortie (avec réglages pré-calculés) ---
+  sections.push(buildOutputFormat(calculatedSettings));
+
+  return {
+    systemPrompt: sections.join("\n\n"),
+    calculatedSettings,
+  };
 }
 
 function buildGenreContext(genre: (typeof GENRES)[number], songLength: "short" | "radio" | "standard" | "long"): string {
@@ -232,7 +249,7 @@ function buildMusicRulesContext(genreId: string): string {
   ].join("\n");
 }
 
-function buildOutputFormat(): string {
+function buildOutputFormat(settings: CalculatedSettings): string {
   return `OUTPUT FORMAT:
 You MUST respond with ONLY a valid JSON object, no markdown, no explanation, no text before or after.
 The JSON must have this exact structure:
@@ -242,9 +259,7 @@ The JSON must have this exact structure:
   "positivePrompt": "Concise Suno 'Style of Music' descriptor. Comma-separated: genre, sub-genre, mood, vocal type, tempo/BPM, key/scale, instruments, production style, era/influences. Always in English. Max 200 chars.",
   "negativePrompt": "Suno 'Exclude from Song' field. EVERY element MUST be prefixed with 'no'. Example: 'no autotune, no screaming, no heavy bass'. Always in English. Max 120 chars. null if not needed.",
   "sunoSettings": {
-    "vocalGender": "Male",
-    "weirdness": 30,
-    "styleInfluence": 70
+    "vocalGender": "Male"
   }
 }
 
@@ -254,16 +269,18 @@ FIELD RULES:
 - positivePrompt: This goes into Suno's "Style of Music" field. Include BPM, key, instruments, vocal style, production quality — all as concise comma-separated descriptors. Do NOT repeat the genre if already obvious.
 - negativePrompt: This goes into Suno's "Exclude from Song" field. EVERY single element MUST start with "no" (e.g., "no autotune, no screaming"). Never omit the "no" prefix.
 - sunoSettings.vocalGender: MUST be exactly "Male" or "Female" — no other value is accepted. For duets, choirs, or mixed vocals, pick the dominant or lead vocal gender. Default to "Male" if unsure.
-- sunoSettings.weirdness: 0-100. Low (0-20) = conventional/safe. Medium (30-50) = balanced creativity. High (60-100) = experimental/avant-garde. Choose based on genre and mood.
-- sunoSettings.styleInfluence: 0-100. Low (0-30) = loose interpretation. Medium (40-70) = balanced. High (80-100) = strictly follows style description. Higher for specific genres, lower for experimental.
+
+NOTE: weirdness and styleInfluence are pre-calculated by the system. Do NOT include them in your response.
+Pre-calculated values: weirdness=${settings.weirdness}, styleInfluence=${settings.styleInfluence}.
+Adapt your creative approach accordingly:
+- Weirdness ${settings.weirdness}: ${settings.weirdness <= 25 ? "Stay conventional and safe." : settings.weirdness <= 50 ? "Balanced creativity, some surprises welcome." : settings.weirdness <= 70 ? "Be experimental, unexpected arrangements." : "Go wild — chaotic, avant-garde, unpredictable."}
+- Style Influence ${settings.styleInfluence}: ${settings.styleInfluence <= 30 ? "Interpret the style loosely, take creative liberties." : settings.styleInfluence <= 60 ? "Follow the style description moderately." : "Follow the style description closely and faithfully."}
 
 SUNO BEST PRACTICES:
 - Keep positivePrompt descriptive but concise — Suno works best with focused style descriptions
 - Use specific musical terms: "fingerpicked acoustic guitar" > "guitar"
 - Include production descriptors: "lo-fi", "polished", "raw", "studio quality"
 - Negative prompt works best with clear, specific exclusions
-- Weirdness >60 can produce unexpected results — use for experimental genres (ambient, avant-garde)
-- Style Influence >80 gives more predictable results — good for traditional genres
 
 Do NOT include any text outside the JSON object`;
 }

@@ -10,22 +10,27 @@ import { MOODS } from "@/lib/data/moods";
 import { WRITING_STYLES } from "@/lib/data/styles";
 
 describe("GenreSelector", () => {
-  it("renders all genres", () => {
+  it("renders all genres in dropdown", () => {
     render(<GenreSelector value={[]} onChange={() => {}} />);
+    // Open the dropdown to see all genres
+    fireEvent.click(screen.getByText("Sélectionner…"));
     for (const genre of GENRES) {
-      expect(screen.getByText(genre.name)).toBeInTheDocument();
+      // Some genres may appear in both carousel and dropdown
+      expect(screen.getAllByText(genre.name).length).toBeGreaterThanOrEqual(1);
     }
   });
 
   it("highlights selected genre", () => {
     render(<GenreSelector value={["rock"]} onChange={() => {}} />);
-    const rockButton = screen.getByText("Rock").closest("button");
-    expect(rockButton?.className).toContain("border-accent");
+    // Selected genre displays a remove badge with aria-label
+    expect(screen.getByLabelText("Retirer Rock")).toBeInTheDocument();
   });
 
   it("calls onChange on click", () => {
     const onChange = vi.fn();
     render(<GenreSelector value={[]} onChange={onChange} />);
+    // Open dropdown then click a genre
+    fireEvent.click(screen.getByText("Sélectionner…"));
     fireEvent.click(screen.getByText("Pop"));
     expect(onChange).toHaveBeenCalledWith(["pop"]);
   });
@@ -78,7 +83,9 @@ describe("PromptInput", () => {
 
   it("renders example suggestions", () => {
     render(<PromptInput value="" onChange={() => {}} />);
-    expect(screen.getByText(/Ballade romantique/)).toBeInTheDocument();
+    // Examples are randomly picked from SAMPLES, so check that 3 suggestion buttons exist
+    const suggestionButtons = screen.getAllByText(/💡/);
+    expect(suggestionButtons.length).toBe(3);
   });
 });
 

@@ -36,7 +36,7 @@ export type CreateGenerationInput = z.infer<typeof createGenerationSchema>;
  * Aligné sur l'interface Suno Custom Mode :
  * - positivePrompt → champ "Style of Music" (genre, instruments, mood, tempo, tonalité, production, vocal)
  * - negativePrompt → champ "Exclude from Song" (chaque élément préfixé par "no")
- * - sunoSettings → "More Options" (Vocal Gender, Weirdness 0-100, Style Influence 0-100)
+ * - sunoSettings → "More Options" (Vocal Gender uniquement, weirdness/styleInfluence sont pré-calculés)
  * - title → "Song Title"
  */
 export const generationResponseSchema = z.object({
@@ -46,8 +46,8 @@ export const generationResponseSchema = z.object({
   negativePrompt: z.string().nullable(),
   sunoSettings: z.object({
     vocalGender: z.enum(["Male", "Female"]).catch("Male"),
-    weirdness: z.number().min(0).max(100),
-    styleInfluence: z.number().min(0).max(100),
+    weirdness: z.number().min(0).max(100).optional(),
+    styleInfluence: z.number().min(0).max(100).optional(),
   }),
 });
 

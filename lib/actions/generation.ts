@@ -54,19 +54,26 @@ export async function createGeneration(
   const params = parsed.data;
 
   try {
-    // 2. Construction du contexte IA
-    const systemPrompt = buildSystemPrompt(params);
+    // 2. Construction du contexte IA + calcul des réglages
+    const { systemPrompt, calculatedSettings } = buildSystemPrompt(params);
 
     // 3. Appel DeepSeek
     const response = await callDeepSeek(systemPrompt, params.userPrompt);
 
-    // 4. Calcul des statistiques
+    // 4. Assemblage des sunoSettings (vocalGender de DeepSeek + valeurs calculées)
+    const sunoSettings: SunoSettings = {
+      vocalGender: response.sunoSettings.vocalGender,
+      weirdness: calculatedSettings.weirdness,
+      styleInfluence: calculatedSettings.styleInfluence,
+    };
+
+    // 5. Calcul des statistiques
     const stats = computeStats(response.lyrics);
 
-    // 5. Sérialisation sunoSettings
-    const serializedSettings = JSON.stringify(response.sunoSettings);
+    // 6. Sérialisation sunoSettings
+    const serializedSettings = JSON.stringify(sunoSettings);
 
-    // 6. Sauvegarde en BDD
+    // 7. Sauvegarde en BDD
     const generation = await db.generation.create({
       data: {
         title: response.title,
@@ -77,7 +84,7 @@ export async function createGeneration(
         style: params.style,
         tempo: params.tempo ?? null,
         language: params.languages.join(","),
-        vocalStyle: response.sunoSettings.vocalGender,
+        vocalStyle: sunoSettings.vocalGender,
         songStructure: params.songStructure ?? null,
         lyrics: response.lyrics,
         positivePrompt: response.positivePrompt,
@@ -92,10 +99,10 @@ export async function createGeneration(
       },
     });
 
-    // 7. Revalidation
+    // 8. Revalidation
     revalidatePath("/(dashboard)");
 
-    // 8. Réponse au client
+    // 9. Réponse au client
     return {
       success: true,
       generation: {
@@ -104,7 +111,7 @@ export async function createGeneration(
         lyrics: generation.lyrics,
         positivePrompt: generation.positivePrompt,
         negativePrompt: generation.negativePrompt,
-        sunoSettings: response.sunoSettings,
+        sunoSettings,
         systemPrompt,
         audioFile: null,
         wordCount: stats.wordCount,

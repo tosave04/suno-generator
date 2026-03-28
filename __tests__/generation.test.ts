@@ -173,7 +173,7 @@ describe("generationResponseSchema", () => {
 // ============================================================
 describe("buildSystemPrompt", () => {
   it("inclut le genre dans le contexte", () => {
-    const prompt = buildSystemPrompt({
+    const { systemPrompt } = buildSystemPrompt({
       userPrompt: "A happy pop song",
       genres: ["pop"],
       mood: "joyful",
@@ -181,12 +181,12 @@ describe("buildSystemPrompt", () => {
       languages: ["en"],
       songLength: "standard",
     });
-    expect(prompt).toContain("GENRE: Pop");
-    expect(prompt).toContain("catchy");
+    expect(systemPrompt).toContain("GENRE: Pop");
+    expect(systemPrompt).toContain("catchy");
   });
 
   it("inclut le mood dans le contexte", () => {
-    const prompt = buildSystemPrompt({
+    const { systemPrompt } = buildSystemPrompt({
       userPrompt: "A sad ballad",
       genres: ["rock"],
       mood: "melancholic",
@@ -194,11 +194,11 @@ describe("buildSystemPrompt", () => {
       languages: ["en"],
       songLength: "standard",
     });
-    expect(prompt).toContain("MOOD: Melancholic");
+    expect(systemPrompt).toContain("MOOD: Melancholic");
   });
 
   it("inclut les instructions de langue", () => {
-    const prompt = buildSystemPrompt({
+    const { systemPrompt } = buildSystemPrompt({
       userPrompt: "Une chanson française",
       genres: ["pop"],
       mood: "joyful",
@@ -206,11 +206,11 @@ describe("buildSystemPrompt", () => {
       languages: ["fr"],
       songLength: "standard",
     });
-    expect(prompt).toContain("French");
+    expect(systemPrompt).toContain("French");
   });
 
   it("inclut le style vocal si spécifié", () => {
-    const prompt = buildSystemPrompt({
+    const { systemPrompt } = buildSystemPrompt({
       userPrompt: "Opera song",
       genres: ["classical"],
       mood: "epic",
@@ -219,11 +219,11 @@ describe("buildSystemPrompt", () => {
       vocalStyle: "Opera",
       songLength: "standard",
     });
-    expect(prompt).toContain("Opera");
+    expect(systemPrompt).toContain("Opera");
   });
 
   it("inclut le format de sortie JSON", () => {
-    const prompt = buildSystemPrompt({
+    const { systemPrompt } = buildSystemPrompt({
       userPrompt: "Any song",
       genres: ["pop"],
       mood: "joyful",
@@ -231,12 +231,12 @@ describe("buildSystemPrompt", () => {
       languages: ["en"],
       songLength: "standard",
     });
-    expect(prompt).toContain("OUTPUT FORMAT");
-    expect(prompt).toContain("JSON");
+    expect(systemPrompt).toContain("OUTPUT FORMAT");
+    expect(systemPrompt).toContain("JSON");
   });
 
   it("inclut les tags Suno", () => {
-    const prompt = buildSystemPrompt({
+    const { systemPrompt } = buildSystemPrompt({
       userPrompt: "Test",
       genres: ["pop"],
       mood: "joyful",
@@ -244,12 +244,12 @@ describe("buildSystemPrompt", () => {
       languages: ["en"],
       songLength: "standard",
     });
-    expect(prompt).toContain("SUNO TAGS REFERENCE");
-    expect(prompt).toContain("[Chorus]");
+    expect(systemPrompt).toContain("SUNO TAGS REFERENCE");
+    expect(systemPrompt).toContain("[Chorus]");
   });
 
   it("inclut les instructions Suno Settings dans le format", () => {
-    const prompt = buildSystemPrompt({
+    const { systemPrompt } = buildSystemPrompt({
       userPrompt: "Test",
       genres: ["pop"],
       mood: "joyful",
@@ -257,12 +257,29 @@ describe("buildSystemPrompt", () => {
       languages: ["en"],
       songLength: "standard",
     });
-    expect(prompt).toContain("sunoSettings");
-    expect(prompt).toContain("vocalGender");
-    expect(prompt).toContain("weirdness");
-    expect(prompt).toContain("styleInfluence");
-    expect(prompt).toContain("Exclude from Song");
-    expect(prompt).toContain("title");
+    expect(systemPrompt).toContain("sunoSettings");
+    expect(systemPrompt).toContain("vocalGender");
+    expect(systemPrompt).toContain("weirdness");
+    expect(systemPrompt).toContain("styleInfluence");
+    expect(systemPrompt).toContain("Exclude from Song");
+    expect(systemPrompt).toContain("title");
+  });
+
+  it("retourne les calculatedSettings avec le prompt", () => {
+    const { calculatedSettings } = buildSystemPrompt({
+      userPrompt: "Test",
+      genres: ["pop"],
+      mood: "joyful",
+      style: "direct",
+      languages: ["en"],
+      songLength: "standard",
+    });
+    expect(calculatedSettings).toHaveProperty("weirdness");
+    expect(calculatedSettings).toHaveProperty("styleInfluence");
+    expect(calculatedSettings.weirdness).toBeGreaterThanOrEqual(0);
+    expect(calculatedSettings.weirdness).toBeLessThanOrEqual(100);
+    expect(calculatedSettings.styleInfluence).toBeGreaterThanOrEqual(0);
+    expect(calculatedSettings.styleInfluence).toBeLessThanOrEqual(100);
   });
 });
 

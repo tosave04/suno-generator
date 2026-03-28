@@ -199,6 +199,21 @@ function LyricsView({ lyrics }: { lyrics: string }) {
   );
 }
 
+/** Labels Suno pour le curseur Weirdness. */
+function getWeirdnessLabel(value: number): string {
+  if (value <= 32) return "Safe zone";
+  if (value <= 65) return "Expected results";
+  if (value <= 79) return "Experimental results";
+  return "Chaos mode";
+}
+
+/** Labels Suno pour le curseur Style Influence. */
+function getStyleInfluenceLabel(value: number): string {
+  if (value <= 32) return "Loose";
+  if (value <= 79) return "Moderate";
+  return "Strong";
+}
+
 function SettingsView({
   positivePrompt,
   negativePrompt,
@@ -208,10 +223,13 @@ function SettingsView({
   negativePrompt: string | null;
   sunoSettings: SunoSettings;
 }) {
+  const weirdnessLabel = getWeirdnessLabel(sunoSettings.weirdness);
+  const styleLabel = getStyleInfluenceLabel(sunoSettings.styleInfluence);
+
   const settingsItems = [
-    { label: "Vocal Gender", value: sunoSettings.vocalGender },
-    { label: "Weirdness", value: `${sunoSettings.weirdness}%` },
-    { label: "Style Influence", value: `${sunoSettings.styleInfluence}%` },
+    { label: "Vocal Gender", value: sunoSettings.vocalGender, sub: null },
+    { label: "Weirdness", value: `${sunoSettings.weirdness}%`, sub: weirdnessLabel },
+    { label: "Style Influence", value: `${sunoSettings.styleInfluence}%`, sub: styleLabel },
   ];
 
   return (
@@ -242,12 +260,15 @@ function SettingsView({
       <div className="space-y-1.5">
         <span className="text-xs font-medium text-muted-foreground">Paramètres Suno</span>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {settingsItems.map(({ label, value }) => (
+          {settingsItems.map(({ label, value, sub }) => (
             <div key={label} className="rounded-md bg-background p-2.5 space-y-1">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
                 {label}
               </span>
               <p className="text-sm font-medium text-foreground">{value}</p>
+              {sub && (
+                <span className="text-[10px] text-muted-foreground italic">{sub}</span>
+              )}
             </div>
           ))}
         </div>
