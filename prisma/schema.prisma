@@ -26,6 +26,8 @@ model Generation {
   language      String  @default("en")
   vocalStyle    String?
   songStructure String?
+  songLength    String?
+  atmosphere    String?
 
   // Résultats de la génération
   lyrics           String
@@ -36,8 +38,7 @@ model Generation {
 
   // Métadonnées
   isFavorite  Boolean @default(false)
-  audioFile   String?
-  audioFormat String?
+  audioUrl    String?
 
   // Statistiques
   wordCount        Int?

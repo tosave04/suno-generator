@@ -1,42 +1,31 @@
 import { z } from "zod";
 
-/** Formats audio acceptés. */
-export const ACCEPTED_AUDIO_FORMATS = ["audio/mpeg", "audio/wav", "audio/wave", "audio/x-wav"] as const;
+/** Préfixes d'URL acceptés pour le lien audio. */
+export const ACCEPTED_URL_PREFIXES = [
+  "https://suno.com/s/",
+  "https://www.youtube.com/watch?v=",
+  "https://youtu.be/",
+] as const;
 
-/** Extensions correspondantes pour l'attribut accept du file input. */
-export const ACCEPTED_EXTENSIONS = ".mp3,.wav";
-
-/** Taille maximale : 20 Mo. */
-export const MAX_FILE_SIZE = 20 * 1024 * 1024;
+/** Vérifie qu'une URL audio est valide. */
+function isValidAudioUrl(url: string): boolean {
+  return ACCEPTED_URL_PREFIXES.some((prefix) => url.startsWith(prefix));
+}
 
 /**
- * Schéma de validation pour l'upload d'un fichier audio.
- * Valide côté serveur : generationId + métadonnées du fichier.
+ * Schéma de validation pour l'ajout d'un lien audio.
  */
-export const uploadAudioSchema = z.object({
+export const audioUrlSchema = z.object({
   generationId: z.string().min(1, "L'identifiant de la génération est requis"),
-  fileName: z
+  audioUrl: z
     .string()
-    .min(1, "Le nom du fichier est requis")
-    .refine(
-      (name) => /\.(mp3|wav)$/i.test(name),
-      "Seuls les fichiers MP3 et WAV sont acceptés"
-    ),
-  fileSize: z
-    .number()
-    .min(1, "Le fichier est vide")
-    .max(MAX_FILE_SIZE, "Le fichier ne doit pas dépasser 20 Mo"),
-  fileType: z
-    .string()
-    .refine(
-      (type) => (ACCEPTED_AUDIO_FORMATS as readonly string[]).includes(type),
-      "Format audio non supporté (MP3 ou WAV uniquement)"
-    ),
+    .min(1, "Le lien est requis")
+    .refine(isValidAudioUrl, "Lien incorrect — Seuls les liens Suno ou YouTube sont acceptés"),
 });
 
-export type UploadAudioInput = z.infer<typeof uploadAudioSchema>;
+export type AudioUrlInput = z.infer<typeof audioUrlSchema>;
 
-/** Schéma de validation pour la suppression d'un fichier audio. */
+/** Schéma de validation pour la suppression d'un lien audio. */
 export const deleteAudioSchema = z.object({
   generationId: z.string().min(1, "L'identifiant de la génération est requis"),
 });

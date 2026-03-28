@@ -1,7 +1,7 @@
 {
 	"name": "suno-generator",
 	"description": "A music composition generator using AI, built with Next.js and Prisma.",
-	"version": "1.5.0",
+	"version": "1.6.0",
 	"author": {
 		"name": "Thomas Savournin",
 		"email": "tosave.vbl@gmail.com"

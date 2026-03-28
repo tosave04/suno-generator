@@ -68,7 +68,7 @@ export function SidebarFilters({ filters, onChange }: SidebarFiltersProps) {
         >
           <option value="">Tous les genres</option>
           {GENRES.map((g) => (
-            <option key={g.id} value={g.name}>
+            <option key={g.id} value={g.id}>
               {g.name}
             </option>
           ))}

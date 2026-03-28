@@ -6,31 +6,24 @@ import { toggleFavorite } from "@/lib/actions/favorite";
 import { deleteGeneration, type GenerationSummary } from "@/lib/actions/generation";
 import { genreColorClasses } from "@/components/ui/badge";
 
-function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(date));
-}
-
 interface GenerationCardProps {
   generation: GenerationSummary;
   isActive: boolean;
   onSelect: (id: string) => void;
+  onRefresh: () => void;
 }
 
-export function GenerationCard({ generation, isActive, onSelect }: GenerationCardProps) {
+export function GenerationCard({ generation, isActive, onSelect, onRefresh }: GenerationCardProps) {
   const [isPending, startTransition] = useTransition();
 
   const displayTitle = generation.title ?? generation.userPrompt.slice(0, 50);
-  const genreId = generation.genre.toLowerCase();
-  const genreColor = genreColorClasses[genreId] ?? "bg-muted text-muted-foreground";
+  const genres = generation.genre.split(",");
 
   function handleFavorite(e: React.MouseEvent) {
     e.stopPropagation();
     startTransition(async () => {
       await toggleFavorite({ id: generation.id });
+      onRefresh();
     });
   }
 
@@ -38,6 +31,7 @@ export function GenerationCard({ generation, isActive, onSelect }: GenerationCar
     e.stopPropagation();
     startTransition(async () => {
       await deleteGeneration({ id: generation.id });
+      onRefresh();
     });
   }
 
@@ -49,15 +43,18 @@ export function GenerationCard({ generation, isActive, onSelect }: GenerationCar
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") onSelect(generation.id);
       }}
-      className={`group flex flex-col gap-2 rounded-lg border p-3 cursor-pointer transition-all animate-fade-in ${
+      className={`group flex flex-col gap-1 rounded-md border p-2 cursor-pointer transition-all animate-fade-in ${
         isActive
           ? "border-accent/50 bg-accent/5"
-          : "border-border bg-muted hover:border-accent/30 hover:bg-muted/80"
+          : "border-transparent bg-transparent hover:border-border hover:bg-muted/50"
       } ${isPending ? "opacity-60 pointer-events-none" : ""}`}
     >
       {/* Header : titre + actions */}
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-medium text-foreground truncate">{displayTitle}</span>
+        <span className="text-xs font-medium text-foreground truncate flex items-center gap-1">
+          {generation.audioUrl && <Music className="h-3 w-3 shrink-0 text-muted-foreground" />}
+          {displayTitle}
+        </span>
         <div className="flex items-center gap-0.5 shrink-0">
           <button
             type="button"
@@ -83,22 +80,17 @@ export function GenerationCard({ generation, isActive, onSelect }: GenerationCar
 
       {/* Badges genre + mood */}
       <div className="flex items-center gap-1.5">
-        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${genreColor}`}>
-          {generation.genre}
-        </span>
+        {genres.map((g) => {
+          const color = genreColorClasses[g.toLowerCase()] ?? "bg-muted text-muted-foreground";
+          return (
+            <span key={g} className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${color}`}>
+              {g}
+            </span>
+          );
+        })}
         <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground">
           {generation.mood}
         </span>
-      </div>
-
-      {/* Footer : date + icône audio */}
-      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-        <span>{formatDate(generation.createdAt)}</span>
-        {generation.audioFile && (
-          <span className="flex items-center gap-1">
-            <Music className="h-3 w-3" />
-          </span>
-        )}
       </div>
     </div>
   );

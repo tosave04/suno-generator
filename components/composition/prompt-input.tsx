@@ -43,14 +43,14 @@ export function PromptInput({ value, onChange, onRandomFill, isRandomizing }: Pr
       />
       <div className="flex items-center justify-between">
         {/* Exemples cliquables */}
-        <div className="flex flex-wrap gap-1.5 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
           {onRandomFill && (
             <button
               type="button"
               onClick={onRandomFill}
               disabled={isRandomizing}
               title="Remplir aléatoirement tous les champs"
-              className={`inline-flex items-center gap-1.5 rounded-lg border-2 border-accent/40 bg-accent/15 px-3.5 py-1.5 text-sm font-semibold text-accent shadow-sm transition-all hover:bg-accent/25 hover:border-accent/60 hover:shadow-md cursor-pointer ${isRandomizing ? "animate-pulse border-accent bg-accent/25 shadow-accent/20" : ""}`}
+              className={`inline-flex items-center gap-1.5 rounded-lg border-2 border-accent/40 bg-accent/15 px-3.5 py-1.5 mr-4 text-sm font-semibold text-accent shadow-sm transition-all hover:bg-accent/25 hover:border-accent/60 hover:shadow-md cursor-pointer ${isRandomizing ? "animate-pulse border-accent bg-accent/25 shadow-accent/20" : ""}`}
             >
               <Wand2 className={`h-4 w-4 ${isRandomizing ? "animate-spin" : ""}`} />
               {isRandomizing ? "Tirage…" : "Random"}
@@ -64,7 +64,7 @@ export function PromptInput({ value, onChange, onRandomFill, isRandomizing }: Pr
               onClick={() => { onChange(example); refreshExamples(); }}
               className="text-[10px] text-accent hover:underline"
             >
-              💡 {example.length > 60 ? `${example.slice(0, 60)}…` : example}
+              💡 {example.length > 50 ? `${example.slice(0, 50)}…` : example}
             </button>
           ))}
         </div>

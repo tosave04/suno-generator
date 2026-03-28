@@ -2,7 +2,7 @@
 
 > Application de composition musicale assistée par IA, générant des lyrics et prompts optimisés pour [Suno](https://suno.com).
 
-**Version :** `1.5.0` · **Statut :** v1.5 — Calculateur Suno Settings & Chaos · **Licence :** Privé
+**Version :** `1.6.0` · **Statut :** v1.6 — Audio URL, Stats & UX · **Licence :** Privé
 
 ---
 
@@ -29,7 +29,7 @@ Suno Generator est une application web qui permet de créer des chansons de haut
 | **Transparence IA** | Onglet "Prompt IA" pour visualiser/copier le prompt système DeepSeek |
 | **Historique & favoris** | Sauvegarde des générations en BDD avec système de favoris |
 | **Filtres & recherche** | Panneau latéral filtrable (genre, favoris, fichier audio associé…) |
-| **Upload audio** | Association de fichiers MP3/WAV aux générations |
+| **Upload audio** | Association de liens audio (Suno, YouTube) aux générations |
 | **Random Fill** | Remplissage aléatoire intelligent avec probabilités pondérées et effet "tirage de loto" |
 | **Dashboard stats** | KPIs, top genres/moods, activité récente, stats par génération |
 | **Responsive** | Interface adaptée mobile avec sidebar collapsible |

@@ -1,101 +1,86 @@
 import { describe, it, expect } from "vitest";
 import {
-  uploadAudioSchema,
+  audioUrlSchema,
   deleteAudioSchema,
-  MAX_FILE_SIZE,
-  ACCEPTED_EXTENSIONS,
+  ACCEPTED_URL_PREFIXES,
 } from "@/lib/schemas/upload";
 
 // ============================================================
-// Schéma Zod — uploadAudioSchema
+// Schéma Zod — audioUrlSchema
 // ============================================================
-describe("uploadAudioSchema", () => {
-  const validInput = {
+describe("audioUrlSchema", () => {
+  const validSunoInput = {
     generationId: "clx1234567890",
-    fileName: "my-song.mp3",
-    fileSize: 1024 * 1024, // 1 Mo
-    fileType: "audio/mpeg",
+    audioUrl: "https://suno.com/s/abc123",
   };
 
-  it("valide un fichier MP3 correct", () => {
-    const result = uploadAudioSchema.safeParse(validInput);
+  it("valide un lien Suno correct", () => {
+    const result = audioUrlSchema.safeParse(validSunoInput);
     expect(result.success).toBe(true);
   });
 
-  it("valide un fichier WAV correct", () => {
-    const result = uploadAudioSchema.safeParse({
-      ...validInput,
-      fileName: "track.wav",
-      fileType: "audio/wav",
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it("valide audio/wave comme type MIME", () => {
-    const result = uploadAudioSchema.safeParse({
-      ...validInput,
-      fileName: "track.wav",
-      fileType: "audio/wave",
+  it("valide un lien YouTube (watch) correct", () => {
+    const result = audioUrlSchema.safeParse({
+      ...validSunoInput,
+      audioUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     });
     expect(result.success).toBe(true);
   });
 
-  it("rejette un fichier trop volumineux (>20 Mo)", () => {
-    const result = uploadAudioSchema.safeParse({
-      ...validInput,
-      fileSize: MAX_FILE_SIZE + 1,
+  it("valide un lien YouTube (youtu.be) correct", () => {
+    const result = audioUrlSchema.safeParse({
+      ...validSunoInput,
+      audioUrl: "https://youtu.be/dQw4w9WgXcQ",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejette un lien Spotify", () => {
+    const result = audioUrlSchema.safeParse({
+      ...validSunoInput,
+      audioUrl: "https://open.spotify.com/track/123",
     });
     expect(result.success).toBe(false);
   });
 
-  it("rejette un fichier vide (0 octets)", () => {
-    const result = uploadAudioSchema.safeParse({
-      ...validInput,
-      fileSize: 0,
+  it("rejette un lien HTTP (non HTTPS)", () => {
+    const result = audioUrlSchema.safeParse({
+      ...validSunoInput,
+      audioUrl: "http://suno.com/s/abc123",
     });
     expect(result.success).toBe(false);
   });
 
-  it("rejette un format audio non supporté (OGG)", () => {
-    const result = uploadAudioSchema.safeParse({
-      ...validInput,
-      fileName: "track.ogg",
-      fileType: "audio/ogg",
+  it("rejette un lien vide", () => {
+    const result = audioUrlSchema.safeParse({
+      ...validSunoInput,
+      audioUrl: "",
     });
     expect(result.success).toBe(false);
   });
 
-  it("rejette une extension invalide (.pdf)", () => {
-    const result = uploadAudioSchema.safeParse({
-      ...validInput,
-      fileName: "document.pdf",
-      fileType: "application/pdf",
+  it("rejette un URL quelconque", () => {
+    const result = audioUrlSchema.safeParse({
+      ...validSunoInput,
+      audioUrl: "https://example.com/audio.mp3",
     });
     expect(result.success).toBe(false);
   });
 
   it("rejette un generationId vide", () => {
-    const result = uploadAudioSchema.safeParse({
-      ...validInput,
+    const result = audioUrlSchema.safeParse({
+      ...validSunoInput,
       generationId: "",
     });
     expect(result.success).toBe(false);
   });
 
-  it("rejette un nom de fichier vide", () => {
-    const result = uploadAudioSchema.safeParse({
-      ...validInput,
-      fileName: "",
+  it("rejette un lien YouTube mobile (m.youtube.com)", () => {
+    const result = audioUrlSchema.safeParse({
+      ...validSunoInput,
+      audioUrl: "https://m.youtube.com/watch?v=dQw4w9WgXcQ",
     });
     expect(result.success).toBe(false);
-  });
-
-  it("accepte un fichier à la taille limite exacte (20 Mo)", () => {
-    const result = uploadAudioSchema.safeParse({
-      ...validInput,
-      fileSize: MAX_FILE_SIZE,
-    });
-    expect(result.success).toBe(true);
   });
 });
 
@@ -122,12 +107,10 @@ describe("deleteAudioSchema", () => {
 // Constantes
 // ============================================================
 describe("upload constants", () => {
-  it("MAX_FILE_SIZE vaut 20 Mo", () => {
-    expect(MAX_FILE_SIZE).toBe(20 * 1024 * 1024);
-  });
-
-  it("ACCEPTED_EXTENSIONS contient .mp3 et .wav", () => {
-    expect(ACCEPTED_EXTENSIONS).toContain(".mp3");
-    expect(ACCEPTED_EXTENSIONS).toContain(".wav");
+  it("ACCEPTED_URL_PREFIXES contient les 3 préfixes autorisés", () => {
+    expect(ACCEPTED_URL_PREFIXES).toContain("https://suno.com/s/");
+    expect(ACCEPTED_URL_PREFIXES).toContain("https://www.youtube.com/watch?v=");
+    expect(ACCEPTED_URL_PREFIXES).toContain("https://youtu.be/");
+    expect(ACCEPTED_URL_PREFIXES).toHaveLength(3);
   });
 });

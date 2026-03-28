@@ -29,11 +29,21 @@ export interface GenerationData {
   negativePrompt: string | null;
   sunoSettings: SunoSettings;
   systemPrompt: string | null;
-  audioFile: string | null;
+  audioUrl: string | null;
   wordCount: number;
   characterCount: number;
   sectionCount: number;
   estimatedDuration: string;
+  // Paramètres de composition (pour restaurer le formulaire)
+  genre: string;
+  mood: string | null;
+  style: string;
+  tempo: string | null;
+  language: string;
+  vocalStyle: string | null;
+  songLength: string | null;
+  atmosphere: string | null;
+  userPrompt: string;
 }
 
 /**
@@ -84,8 +94,10 @@ export async function createGeneration(
         style: params.style,
         tempo: params.tempo ?? null,
         language: params.languages.join(","),
-        vocalStyle: sunoSettings.vocalGender,
+        vocalStyle: params.vocalStyle ?? null,
         songStructure: params.songStructure ?? null,
+        songLength: params.songLength,
+        atmosphere: params.atmosphere ?? null,
         lyrics: response.lyrics,
         positivePrompt: response.positivePrompt,
         negativePrompt: response.negativePrompt ?? null,
@@ -113,11 +125,20 @@ export async function createGeneration(
         negativePrompt: generation.negativePrompt,
         sunoSettings,
         systemPrompt,
-        audioFile: null,
+        audioUrl: null,
         wordCount: stats.wordCount,
         characterCount: stats.characterCount,
         sectionCount: stats.sectionCount,
         estimatedDuration: stats.estimatedDuration,
+        genre: params.genres.join(","),
+        mood: params.mood ?? null,
+        style: params.style,
+        tempo: params.tempo ?? null,
+        language: params.languages.join(","),
+        vocalStyle: params.vocalStyle ?? null,
+        songLength: params.songLength ?? null,
+        atmosphere: params.atmosphere ?? null,
+        userPrompt: params.userPrompt,
       },
     };
   } catch (error) {
@@ -144,7 +165,7 @@ export interface GenerationSummary {
   genre: string;
   mood: string | null;
   isFavorite: boolean;
-  audioFile: string | null;
+  audioUrl: string | null;
   createdAt: Date;
 }
 
@@ -155,24 +176,14 @@ export interface GenerationFilters {
   favoritesOnly?: boolean;
   withAudio?: boolean;
   sortOrder?: "recent" | "oldest";
-  page?: number;
-}
-
-/** Nombre de générations par page dans la sidebar. */
-const GENERATIONS_PAGE_SIZE = 20;
-
-/** Résultat paginé des générations. */
-export interface PaginatedGenerations {
-  items: GenerationSummary[];
-  hasMore: boolean;
 }
 
 /**
- * Server Action — Récupère la liste des générations avec filtres et pagination.
+ * Server Action — Récupère la liste des générations avec filtres.
  */
 export async function getGenerations(
   filters: GenerationFilters = {}
-): Promise<PaginatedGenerations> {
+): Promise<GenerationSummary[]> {
   const where: Record<string, unknown> = {};
 
   if (filters.favoritesOnly) {
@@ -180,11 +191,20 @@ export async function getGenerations(
   }
 
   if (filters.genre) {
-    where.genre = filters.genre;
+    // Match exact du genre dans un champ comma-separated (max 2 genres)
+    where.AND = [
+      {
+        OR: [
+          { genre: filters.genre },
+          { genre: { startsWith: `${filters.genre},` } },
+          { genre: { endsWith: `,${filters.genre}` } },
+        ],
+      },
+    ];
   }
 
   if (filters.withAudio) {
-    where.audioFile = { not: null };
+    where.audioUrl = { not: null };
   }
 
   if (filters.search) {
@@ -194,10 +214,7 @@ export async function getGenerations(
     ];
   }
 
-  const page = filters.page ?? 0;
-  const take = GENERATIONS_PAGE_SIZE + 1; // +1 to detect hasMore
-
-  const generations = await db.generation.findMany({
+  return db.generation.findMany({
     where,
     select: {
       id: true,
@@ -206,20 +223,13 @@ export async function getGenerations(
       genre: true,
       mood: true,
       isFavorite: true,
-      audioFile: true,
+      audioUrl: true,
       createdAt: true,
     },
     orderBy: {
       createdAt: filters.sortOrder === "oldest" ? "asc" : "desc",
     },
-    skip: page * GENERATIONS_PAGE_SIZE,
-    take,
   });
-
-  const hasMore = generations.length > GENERATIONS_PAGE_SIZE;
-  const items = hasMore ? generations.slice(0, GENERATIONS_PAGE_SIZE) : generations;
-
-  return { items, hasMore };
 }
 
 const deleteGenerationSchema = z.object({
@@ -231,7 +241,7 @@ export type DeleteActionResult =
   | { success: false; error: string };
 
 /**
- * Server Action — Supprime une génération et son fichier audio associé.
+ * Server Action — Supprime une génération.
  */
 export async function deleteGeneration(
   input: z.infer<typeof deleteGenerationSchema>
@@ -247,23 +257,11 @@ export async function deleteGeneration(
   try {
     const generation = await db.generation.findUnique({
       where: { id: parsed.data.id },
-      select: { id: true, audioFile: true },
+      select: { id: true },
     });
 
     if (!generation) {
       return { success: false, error: "Génération introuvable" };
-    }
-
-    // Suppression du fichier audio si existant
-    if (generation.audioFile) {
-      const { unlink } = await import("fs/promises");
-      const path = await import("path");
-      const filePath = path.join(process.cwd(), "public", generation.audioFile);
-      try {
-        await unlink(filePath);
-      } catch {
-        // Fichier déjà supprimé ou introuvable, on continue
-      }
     }
 
     await db.generation.delete({ where: { id: parsed.data.id } });
@@ -302,10 +300,19 @@ export async function getGenerationById(
     negativePrompt: generation.negativePrompt,
     sunoSettings,
     systemPrompt: generation.systemPrompt ?? null,
-    audioFile: generation.audioFile ?? null,
+    audioUrl: generation.audioUrl ?? null,
     wordCount: generation.wordCount ?? 0,
     characterCount: generation.characterCount ?? 0,
     sectionCount: generation.sectionCount ?? 0,
     estimatedDuration: generation.estimatedDuration ?? "—",
+    genre: generation.genre,
+    mood: generation.mood ?? null,
+    style: generation.style,
+    tempo: generation.tempo ?? null,
+    language: generation.language,
+    vocalStyle: generation.vocalStyle ?? null,
+    songLength: generation.songLength ?? null,
+    atmosphere: generation.atmosphere ?? null,
+    userPrompt: generation.userPrompt,
   };
 }

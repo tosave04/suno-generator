@@ -2,6 +2,14 @@
 
 ---
 
+## v1.6.0 — Audio URL, Stats & UX *(28 mars 2026)*
+
+Refactoring complet de l'upload audio : remplacement du système de fichiers (drag & drop MP3/WAV) par des **liens URL** (Suno, YouTube, youtu.be) avec validation Zod. Centralisation des emojis dans `lib/data/emojis.ts` pour affichage dans les stats (Server Components). Drapeaux de langues via flagcdn.com (compatibles Windows). Coverflow genres amélioré (recentrage auto + shift horizontal global). Favicon SVG. `topN()` supporte les valeurs CSV (multi-genre/langue). Breaking : `audioFile`/`audioFormat` → `audioUrl` (reset BDD). 101 tests, lint + build OK.
+
+➜ [Release Notes](releases/RELEASE_NOTES_v1.6.0.md) · [Changelog](changelogs/CHANGELOG_v1.6.0_AUDIO_URL_STATS_UX.md)
+
+---
+
 ## v1.5.0 — Calculateur Suno Settings & Chaos *(28 mars 2026)*
 
 Calculateur déterministe de weirdness et styleInfluence basé sur genre, mood et style (tables de correspondance + variance aléatoire ±6). Nouveau mood Chaos (weirdness +40, styleInfluence -30) pour compositions avant-gardistes. Labels Suno explicites dans l'onglet Réglages (Safe zone, Expected, Experimental, Chaos mode / Loose, Moderate, Strong). DeepSeek ne choisit plus ces valeurs. 9 nouveaux tests calculateur, 103 tests totaux, lint + build OK.

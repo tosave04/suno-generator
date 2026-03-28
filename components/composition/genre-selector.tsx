@@ -3,16 +3,9 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { GENRES } from "@/lib/data/genres";
+import { GENRE_EMOJIS } from "@/lib/data/emojis";
 
-const GENRE_EMOJIS: Record<string, string> = {
-  pop: "🎤", rock: "🎸", hiphop: "🎧", jazz: "🎷",
-  electronic: "🎹", rnb: "🎵", country: "🤠", classical: "🎻",
-  metal: "🤘", folk: "🪕", reggae: "🌴", latin: "💃",
-  blues: "🎺", funk: "🕺", soul: "✨", indie: "🌙",
-  punk: "⚡", ambient: "🌊", kpop: "💖", "16bit": "👾",
-  celtic: "☘️", afroworld: "🥁", disco: "💿",
-  middleeastern: "🏜️", indian: "🐘", japanese: "🎋",
-};
+export { GENRE_EMOJIS };
 
 /** Nombre de voisins visibles de chaque côté du centre */
 const VISIBLE_SIDE = 8;
@@ -20,6 +13,8 @@ const CARD_WIDTH = 140;
 const CARD_GAP = 4;
 /** Nombre de cards mises en avant (centre + voisins). Ex: 3 = centre + 1 de chaque côté */
 const FRONT_COUNT = 5;
+/** Décalage horizontal max (px) du flow entier quand la souris est sur un bord */
+const FLOW_SHIFT_PX = 80;
 
 interface GenreSelectorProps {
   value: string[];
@@ -30,6 +25,7 @@ export function GenreSelector({ value, onChange }: GenreSelectorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [focusIndex, setFocusIndex] = useState(Math.floor(GENRES.length / 2));
+  const [flowShift, setFlowShift] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
@@ -52,6 +48,8 @@ export function GenreSelector({ value, onChange }: GenreSelectorProps) {
     const ratio = Math.max(0, Math.min(1, (rawRatio - PADDING) / (1 - 2 * PADDING)));
     const idx = Math.round(ratio * (GENRES.length - 1));
     setFocusIndex(idx);
+    // Décalage global : -1 (gauche) à +1 (droite) → pixels
+    setFlowShift((rawRatio - 0.5) * 2 * FLOW_SHIFT_PX);
   }, []);
 
   function handleToggle(genreId: string) {
@@ -72,11 +70,12 @@ export function GenreSelector({ value, onChange }: GenreSelectorProps) {
       <div
         ref={containerRef}
         onMouseMove={handleMouseMove}
+        onMouseLeave={() => { setFocusIndex(Math.floor(GENRES.length / 2)); setFlowShift(0); }}
         className="relative h-50 w-full rounded-xl border border-border bg-muted/50"
         style={{ perspective: "800px" }}
       >
         <div className="absolute inset-0 overflow-hidden rounded-xl">
-          <div className="absolute inset-0 flex items-center justify-center" style={{ transformStyle: "preserve-3d" }}>
+          <div className="absolute inset-0 flex items-center justify-center transition-transform duration-200 ease-out" style={{ transformStyle: "preserve-3d", transform: `translateX(${flowShift}px)` }}>
           {GENRES.map((genre, i) => {
             const offset = i - focusIndex;
             const absOffset = Math.abs(offset);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useTransition } from "react";
-import { PanelLeftClose, PanelLeft, ChevronDown } from "lucide-react";
+import { PanelLeftClose, PanelLeft } from "lucide-react";
 import { SidebarFilters } from "@/components/sidebar/sidebar-filters";
 import { GenerationCard } from "@/components/sidebar/generation-card";
 import {
@@ -22,30 +22,18 @@ export function Sidebar({ activeGenerationId, onSelectGeneration, refreshKey }: 
   const [generations, setGenerations] = useState<GenerationSummary[]>([]);
   const [isPending, startTransition] = useTransition();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
 
-  const fetchGenerations = useCallback((loadPage = 0) => {
+  const fetchGenerations = useCallback(() => {
     startTransition(async () => {
-      const data = await getGenerations({ ...filters, page: loadPage });
-      if (loadPage === 0) {
-        setGenerations(data.items);
-      } else {
-        setGenerations((prev) => [...prev, ...data.items]);
-      }
-      setHasMore(data.hasMore);
-      setPage(loadPage);
+      const data = await getGenerations(filters);
+      setGenerations(data);
     });
   }, [filters]);
 
-  // Reset to page 0 when filters or refreshKey change
+  // Refresh when filters or refreshKey change
   useEffect(() => {
-    fetchGenerations(0);
+    fetchGenerations();
   }, [fetchGenerations, refreshKey]);
-
-  function handleLoadMore() {
-    fetchGenerations(page + 1);
-  }
 
   function handleSelect(id: string) {
     onSelectGeneration(id);
@@ -58,7 +46,8 @@ export function Sidebar({ activeGenerationId, onSelectGeneration, refreshKey }: 
       <SidebarFilters filters={filters} onChange={setFilters} />
 
       {/* Liste des générations */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+      <div className="relative flex-1 min-h-0">
+        <div className="h-full overflow-hidden p-2 space-y-1">
         {isPending && generations.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-4">
             Chargement…
@@ -75,21 +64,14 @@ export function Sidebar({ activeGenerationId, onSelectGeneration, refreshKey }: 
                 generation={gen}
                 isActive={activeGenerationId === gen.id}
                 onSelect={handleSelect}
+                onRefresh={fetchGenerations}
               />
             ))}
-            {hasMore && (
-              <button
-                type="button"
-                onClick={handleLoadMore}
-                disabled={isPending}
-                className="flex w-full items-center justify-center gap-1.5 rounded-md py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-background transition-colors cursor-pointer disabled:opacity-50"
-              >
-                <ChevronDown className="h-3.5 w-3.5" />
-                Charger plus
-              </button>
-            )}
           </>
         )}
+        </div>
+        {/* Gradient mask at bottom */}
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-linear-to-t from-muted to-transparent" />
       </div>
     </>
   );
@@ -122,9 +104,9 @@ export function Sidebar({ activeGenerationId, onSelectGeneration, refreshKey }: 
       {/* Sidebar - desktop: always visible, mobile: overlay slide-in */}
       <aside
         className={`
-          border-r border-border bg-muted flex flex-col h-full shrink-0
+          border-r border-border bg-muted flex flex-col shrink-0
           fixed inset-y-0 left-0 z-50 w-72 transition-transform duration-200
-          md:static md:translate-x-0
+          md:sticky md:top-0 md:z-auto md:h-[calc(100vh-3.5rem)] md:translate-x-0
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >

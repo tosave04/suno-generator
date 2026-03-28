@@ -20,6 +20,7 @@
 | **v1.3** | UX & Random Composition | ✅ Terminée | Random fill intelligent, probabilités pondérées, modularité composants |
 | **v1.4** | Structures & Durée | ✅ Terminée | 4 longueurs de structure par genre, sélecteur 4 options |
 | **v1.5** | Calculateur Suno Settings & Chaos | ✅ Terminée | Calculateur weirdness/styleInfluence, mood Chaos, labels Suno |
+| **v1.6** | Audio URL, Stats & UX | ✅ Terminée | Liens URL audio, emojis stats, drapeaux langues, coverflow UX, favicon |
 
 ---
 
@@ -260,3 +261,38 @@
 - [x] Lint + build OK
 
 **Livrable :** 4 longueurs de structure par genre, sélection complète de la durée de composition.
+
+---
+
+## v1.5 — Calculateur Suno Settings & Chaos ✅ *Terminée*
+
+**Objectif :** Calcul automatique de weirdness et styleInfluence basé sur genre/mood/style, avec labels Suno explicites.
+
+- [x] Tables de correspondance genre→weirdness, mood→weirdness, style→styleInfluence
+- [x] Calculateur déterministe avec variance aléatoire ±6
+- [x] Nouveau mood "Chaos" (weirdness +40, styleInfluence -30) pour compositions avant-gardistes
+- [x] Labels Suno explicites dans l'onglet Réglages (Safe zone → Chaos mode / Loose → Strong)
+- [x] DeepSeek ne choisit plus ces valeurs
+- [x] 9 tests calculateur, 103 tests totaux, lint + build OK
+
+**Livrable :** Calculateur déterministe de settings Suno, mood Chaos.
+
+---
+
+## v1.6 — Audio URL, Stats & UX ✅ *Terminée*
+
+**Objectif :** Remplacer l'upload fichier audio par des liens URL, centraliser les emojis pour les stats, améliorer le coverflow et ajouter un favicon.
+
+- [x] Refactoring Prisma : `audioFile` + `audioFormat` → `audioUrl`
+- [x] Schéma Zod `audioUrlSchema` avec validation de préfixes (suno.com, youtube.com, youtu.be)
+- [x] Actions `saveAudioUrl()` et `deleteAudio()` (plus de logique fichier)
+- [x] Composant `AudioLink` : champ URL + bouton "Lier" + lien externe + suppression
+- [x] Centralisation des emojis dans `lib/data/emojis.ts` (sans `"use client"`)
+- [x] Drapeaux de langues via flagcdn.com dans les stats (compatibles Windows)
+- [x] `topN()` avec paramètre `split` pour valeurs CSV (multi-genre, multi-langue)
+- [x] Coverflow genres : recentrage auto au `mouseLeave`
+- [x] Coverflow genres : shift horizontal global (`FLOW_SHIFT_PX = 120`)
+- [x] Favicon SVG avec notes de musique en dégradé violet
+- [x] 101 tests, lint + build OK
+
+**Livrable :** Liens URL audio, emojis stats centralisés, drapeaux flagcdn, coverflow amélioré, favicon.

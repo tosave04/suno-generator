@@ -8,9 +8,32 @@ export interface GlobalStats {
   totalFavorites: number;
   totalWithAudio: number;
   avgWordCount: number;
-  topGenres: { genre: string; count: number }[];
-  topMoods: { mood: string; count: number }[];
+  avgSectionCount: number;
+  topGenres: { label: string; count: number }[];
+  topMoods: { label: string; count: number }[];
+  topStyles: { label: string; count: number }[];
+  topTempos: { label: string; count: number }[];
+  topLanguages: { label: string; count: number }[];
+  topAtmospheres: { label: string; count: number }[];
+  topSongLengths: { label: string; count: number }[];
   recentActivity: { date: string; count: number }[];
+}
+
+/** Utilitaire : top N d'un champ (ignore null/vide). Si split=true, éclate les valeurs CSV. */
+function topN(values: (string | null)[], n: number, split = false): { label: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const v of values) {
+    if (!v) continue;
+    const items = split ? v.split(",") : [v];
+    for (const item of items) {
+      const trimmed = item.trim();
+      if (trimmed) counts.set(trimmed, (counts.get(trimmed) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, n);
 }
 
 /**
@@ -26,34 +49,30 @@ export async function getGlobalStats(): Promise<GlobalStats> {
   ] = await Promise.all([
     db.generation.count(),
     db.generation.count({ where: { isFavorite: true } }),
-    db.generation.count({ where: { audioFile: { not: null } } }),
-    db.generation.aggregate({ _avg: { wordCount: true } }),
+    db.generation.count({ where: { audioUrl: { not: null } } }),
+    db.generation.aggregate({ _avg: { wordCount: true, sectionCount: true } }),
     db.generation.findMany({
-      select: { genre: true, mood: true, createdAt: true },
+      select: {
+        genre: true,
+        mood: true,
+        style: true,
+        tempo: true,
+        language: true,
+        atmosphere: true,
+        songLength: true,
+        createdAt: true,
+      },
       orderBy: { createdAt: "desc" },
     }),
   ]);
 
-  // Top genres (top 5)
-  const genreCounts = new Map<string, number>();
-  for (const g of allGenerations) {
-    genreCounts.set(g.genre, (genreCounts.get(g.genre) ?? 0) + 1);
-  }
-  const topGenres = [...genreCounts.entries()]
-    .map(([genre, count]) => ({ genre, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
-
-  // Top moods (top 5)
-  const moodCounts = new Map<string, number>();
-  for (const g of allGenerations) {
-    const mood = g.mood ?? "none";
-    moodCounts.set(mood, (moodCounts.get(mood) ?? 0) + 1);
-  }
-  const topMoods = [...moodCounts.entries()]
-    .map(([mood, count]) => ({ mood, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+  const topGenres = topN(allGenerations.map((g) => g.genre), 5, true);
+  const topMoods = topN(allGenerations.map((g) => g.mood), 5);
+  const topStyles = topN(allGenerations.map((g) => g.style), 5);
+  const topTempos = topN(allGenerations.map((g) => g.tempo), 5);
+  const topLanguages = topN(allGenerations.map((g) => g.language), 5, true);
+  const topAtmospheres = topN(allGenerations.map((g) => g.atmosphere), 5);
+  const topSongLengths = topN(allGenerations.map((g) => g.songLength), 5);
 
   // Activité récente (7 derniers jours)
   const now = new Date();
@@ -74,8 +93,14 @@ export async function getGlobalStats(): Promise<GlobalStats> {
     totalFavorites,
     totalWithAudio,
     avgWordCount: Math.round(avgResult._avg.wordCount ?? 0),
+    avgSectionCount: Math.round(avgResult._avg.sectionCount ?? 0),
     topGenres,
     topMoods,
+    topStyles,
+    topTempos,
+    topLanguages,
+    topAtmospheres,
+    topSongLengths,
     recentActivity,
   };
 }

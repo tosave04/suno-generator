@@ -1,11 +1,9 @@
 "use client";
 
 import { WRITING_STYLES } from "@/lib/data/styles";
+import { STYLE_ICONS } from "@/lib/data/emojis";
 
-const STYLE_ICONS: Record<string, string> = {
-  poetic: "✒️", storytelling: "📖", direct: "🎯", abstract: "🌀",
-  conversational: "💬", anthem: "🏟️",
-};
+export { STYLE_ICONS };
 
 interface StyleSelectorProps {
   value: string | null;

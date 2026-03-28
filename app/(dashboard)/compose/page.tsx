@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useTransition } from "react";
-import { Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { Sparkles, Loader2, AlertCircle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GenreSelector } from "@/components/composition/genre-selector";
 import { MoodSelector } from "@/components/composition/mood-selector";
@@ -55,6 +55,7 @@ export default function CompositionPage() {
   function handleGenerate() {
     if (!genres.length || !style) return;
     setError(null);
+    setResult(null);
 
     startTransition(async () => {
       const response = await createGeneration({
@@ -86,12 +87,24 @@ export default function CompositionPage() {
         setResult(data);
         setActiveGenerationId(data.id);
         setError(null);
+        // Restaurer les paramètres du formulaire
+        setGenres(data.genre.split(","));
+        setMood(data.mood);
+        setStyle(data.style);
+        setTempo(data.tempo);
+        setLanguages(data.language.split(","));
+        setVocalStyle(data.vocalStyle);
+        setAtmosphere(data.atmosphere);
+        if (data.songLength === "short" || data.songLength === "radio" || data.songLength === "standard" || data.songLength === "long") {
+          setSongLength(data.songLength);
+        }
+        setUserPrompt(data.userPrompt);
       }
     });
   }, []);
 
-  const handleAudioChange = useCallback((audioFile: string | null) => {
-    setResult((prev) => prev ? { ...prev, audioFile } : prev);
+  const handleAudioChange = useCallback((audioUrl: string | null) => {
+    setResult((prev) => prev ? { ...prev, audioUrl } : prev);
     setRefreshKey((k) => k + 1);
   }, []);
 
@@ -158,25 +171,49 @@ export default function CompositionPage() {
 
           <PromptInput value={userPrompt} onChange={setUserPrompt} onRandomFill={handleRandomFill} isRandomizing={isRandomizing} />
 
-          {/* CTA Générer */}
-          <Button
-            size="lg"
-            disabled={!canGenerate}
-            onClick={handleGenerate}
-            className="w-full py-3 text-base font-semibold cursor-pointer"
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Génération en cours…
-              </>
-            ) : (
-              <>
-                <Sparkles className="mr-2 h-5 w-5" />
-                Générer
-              </>
-            )}
-          </Button>
+          {/* CTA Générer + Reset */}
+          <div className="flex gap-3">
+            <Button
+              size="lg"
+              disabled={!canGenerate}
+              onClick={handleGenerate}
+              className="flex-1 py-3 text-base font-semibold cursor-pointer"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Génération en cours…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Générer
+                </>
+              )}
+            </Button>
+            <Button
+              size="lg"
+              variant="ghost"
+              disabled={isPending}
+              onClick={() => {
+                setGenres([]);
+                setStyle("poetic");
+                setMood(null);
+                setTempo("Medium");
+                setLanguages(["en"]);
+                setVocalStyle(null);
+                setAtmosphere(null);
+                setSongLength("radio");
+                setUserPrompt("");
+                setResult(null);
+                setError(null);
+              }}
+              className="group relative px-4 py-3 cursor-pointer rounded-md border border-border/50 hover:border-accent/40 hover:bg-accent/5 transition-all duration-200"
+              aria-label="Réinitialiser les réglages"
+            >
+              <RotateCcw className="h-5 w-5 transition-transform duration-300 group-hover:-rotate-180" />
+            </Button>
+          </div>
 
           {/* Erreur */}
           {error && (
@@ -197,7 +234,7 @@ export default function CompositionPage() {
                 negativePrompt={result.negativePrompt}
                 sunoSettings={result.sunoSettings}
                 systemPrompt={result.systemPrompt}
-                audioFile={result.audioFile}
+                audioUrl={result.audioUrl}
                 onAudioChange={handleAudioChange}
                 wordCount={result.wordCount}
                 characterCount={result.characterCount}

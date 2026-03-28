@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Music, Copy, Check, Hash, Type, LayoutList, Clock, Terminal } from "lucide-react";
 import type { SunoSettings } from "@/lib/actions/generation";
-import { AudioUpload } from "@/components/composition/audio-upload";
+import { AudioLink } from "@/components/composition/audio-upload";
 
 const TABS = ["Lyrics", "Réglages", "Prompt IA"] as const;
 type Tab = (typeof TABS)[number];
@@ -26,7 +26,7 @@ export function GenerationResult({
   negativePrompt,
   sunoSettings,
   systemPrompt,
-  audioFile,
+  audioUrl,
   onAudioChange,
   wordCount,
   characterCount,
@@ -40,8 +40,8 @@ export function GenerationResult({
   negativePrompt: string | null;
   sunoSettings: SunoSettings;
   systemPrompt: string | null;
-  audioFile: string | null;
-  onAudioChange: (audioFile: string | null) => void;
+  audioUrl: string | null;
+  onAudioChange: (audioUrl: string | null) => void;
   wordCount: number;
   characterCount: number;
   sectionCount: number;
@@ -101,12 +101,12 @@ export function GenerationResult({
         )}
       </div>
 
-      {/* Audio Upload — toujours visible */}
+      {/* Lien audio — toujours visible */}
       <div className="border-t border-border pt-4">
-        <h4 className="text-sm font-medium text-muted-foreground mb-3">Fichier audio</h4>
-        <AudioUpload
+        <h4 className="text-sm font-medium text-muted-foreground mb-3">Lien audio</h4>
+        <AudioLink
           generationId={generationId}
-          audioFile={audioFile}
+          audioUrl={audioUrl}
           onAudioChange={onAudioChange}
         />
       </div>

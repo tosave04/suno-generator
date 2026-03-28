@@ -14,7 +14,7 @@ vi.mock("@/lib/actions/generation", async (importOriginal) => {
   return {
     ...original,
     deleteGeneration: vi.fn().mockResolvedValue({ success: true }),
-    getGenerations: vi.fn().mockResolvedValue({ items: [], hasMore: false }),
+    getGenerations: vi.fn().mockResolvedValue([]),
   };
 });
 
@@ -25,7 +25,7 @@ const mockGeneration: GenerationSummary = {
   genre: "Rock",
   mood: "Energetic",
   isFavorite: false,
-  audioFile: null,
+  audioUrl: null,
   createdAt: new Date("2026-03-25"),
 };
 
@@ -36,6 +36,7 @@ describe("GenerationCard", () => {
         generation={mockGeneration}
         isActive={false}
         onSelect={() => {}}
+        onRefresh={() => {}}
       />
     );
     expect(screen.getByText("Test Song")).toBeInTheDocument();
@@ -50,6 +51,7 @@ describe("GenerationCard", () => {
         generation={noTitle}
         isActive={false}
         onSelect={() => {}}
+        onRefresh={() => {}}
       />
     );
     expect(screen.getByText("A beautiful song")).toBeInTheDocument();
@@ -61,6 +63,7 @@ describe("GenerationCard", () => {
         generation={mockGeneration}
         isActive={true}
         onSelect={() => {}}
+        onRefresh={() => {}}
       />
     );
     const card = container.firstElementChild;
@@ -74,6 +77,7 @@ describe("GenerationCard", () => {
         generation={mockGeneration}
         isActive={false}
         onSelect={onSelect}
+        onRefresh={() => {}}
       />
     );
     fireEvent.click(screen.getByText("Test Song"));
@@ -87,22 +91,24 @@ describe("GenerationCard", () => {
         generation={fav}
         isActive={false}
         onSelect={() => {}}
+        onRefresh={() => {}}
       />
     );
     const favButton = screen.getByTitle("Retirer des favoris");
     expect(favButton).toBeInTheDocument();
   });
 
-  it("shows formatted date", () => {
+  it("shows audio icon when audioUrl is present", () => {
     render(
       <GenerationCard
-        generation={mockGeneration}
+        generation={{ ...mockGeneration, audioUrl: "https://suno.com/s/abc" }}
         isActive={false}
         onSelect={() => {}}
+        onRefresh={() => {}}
       />
     );
-    // FR date format: "25 mars 2026"
-    expect(screen.getByText("25 mars 2026")).toBeInTheDocument();
+    const svg = document.querySelector(".lucide-music");
+    expect(svg).toBeInTheDocument();
   });
 });
 
@@ -163,7 +169,7 @@ describe("SidebarFilters", () => {
       <SidebarFilters filters={{}} onChange={onChange} />
     );
     const select = screen.getByDisplayValue("Tous les genres");
-    fireEvent.change(select, { target: { value: "Rock" } });
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ genre: "Rock" }));
+    fireEvent.change(select, { target: { value: "rock" } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ genre: "rock" }));
   });
 });

@@ -8,7 +8,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-screen flex-col">
       {/* Header */}
       <header className="h-14 border-b border-border bg-background flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-3">

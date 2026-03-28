@@ -21,70 +21,70 @@ export interface CalculatedSettings {
 // ---------------------------------------------------------------------------
 
 const GENRE_WEIRDNESS_BASE: Record<string, number> = {
-  pop: 32,
-  rock: 40,
-  hiphop: 35,
-  jazz: 55,
-  electronic: 50,
-  rnb: 35,
-  country: 27,
-  classical: 30,
-  metal: 45,
-  folk: 27,
-  indie: 48,
-  latin: 35,
-  reggae: 32,
-  blues: 35,
-  punk: 45,
-  ambient: 62,
-  funk: 38,
-  soul: 32,
-  disco: 30,
-  kpop: 32,
-  celtic: 30,
-  afroworld: 40,
-  "16bit": 55,
-  middleeastern: 40,
-  indian: 40,
-  japanese: 45,
+  pop: 34,
+  rock: 43,
+  hiphop: 38,
+  jazz: 60,
+  electronic: 55,
+  rnb: 37,
+  country: 30,
+  classical: 33,
+  metal: 50,
+  folk: 30,
+  indie: 53,
+  latin: 38,
+  reggae: 35,
+  blues: 38,
+  punk: 50,
+  ambient: 67,
+  funk: 43,
+  soul: 34,
+  disco: 33,
+  kpop: 34,
+  celtic: 33,
+  afroworld: 45,
+  "16bit": 60,
+  middleeastern: 45,
+  indian: 45,
+  japanese: 50,
 };
 
-const DEFAULT_WEIRDNESS_BASE = 40;
+const DEFAULT_WEIRDNESS_BASE = 42;
 
 // ---------------------------------------------------------------------------
 // StyleInfluence : base par genre (fidélité au prompt typique du genre)
 // ---------------------------------------------------------------------------
 
 const GENRE_STYLE_INFLUENCE_BASE: Record<string, number> = {
-  pop: 65,
-  rock: 55,
-  hiphop: 50,
-  jazz: 40,
-  electronic: 45,
-  rnb: 55,
-  country: 70,
-  classical: 75,
-  metal: 60,
-  folk: 67,
-  indie: 45,
-  latin: 55,
-  reggae: 60,
-  blues: 55,
-  punk: 50,
-  ambient: 35,
-  funk: 50,
-  soul: 57,
-  disco: 60,
-  kpop: 65,
-  celtic: 65,
-  afroworld: 50,
-  "16bit": 45,
-  middleeastern: 55,
-  indian: 55,
-  japanese: 50,
+  pop: 68,
+  rock: 58,
+  hiphop: 53,
+  jazz: 43,
+  electronic: 48,
+  rnb: 58,
+  country: 73,
+  classical: 78,
+  metal: 63,
+  folk: 70,
+  indie: 48,
+  latin: 58,
+  reggae: 63,
+  blues: 58,
+  punk: 53,
+  ambient: 38,
+  funk: 53,
+  soul: 60,
+  disco: 63,
+  kpop: 68,
+  celtic: 68,
+  afroworld: 53,
+  "16bit": 48,
+  middleeastern: 58,
+  indian: 58,
+  japanese: 53,
 };
 
-const DEFAULT_STYLE_INFLUENCE_BASE = 50;
+const DEFAULT_STYLE_INFLUENCE_BASE = 53;
 
 // ---------------------------------------------------------------------------
 // Mood modifiers (ajout/retrait en points absolus sur la base)
@@ -144,7 +144,7 @@ const STYLE_INFLUENCE_MOD: Record<string, number> = {
 // Variance aléatoire
 // ---------------------------------------------------------------------------
 
-const RANDOM_VARIANCE = 6;
+const RANDOM_VARIANCE = 9;
 
 /** Retourne un entier aléatoire dans [-range, +range]. */
 function randomVariance(range: number): number {

@@ -1,11 +1,9 @@
 "use client";
 
 import { MOODS } from "@/lib/data/moods";
+import { MOOD_EMOJIS } from "@/lib/data/emojis";
 
-const MOOD_EMOJIS: Record<string, string> = {
-  joyful: "😊", melancholic: "😢", energetic: "⚡", calm: "😌", aggressive: "😤",
-  romantic: "💕", dark: "🌑", uplifting: "🌟", nostalgic: "🥀", epic: "🔥",
-};
+export { MOOD_EMOJIS };
 
 interface MoodSelectorProps {
   value: string | null;
