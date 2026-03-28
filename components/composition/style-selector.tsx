@@ -21,7 +21,7 @@ export function StyleSelector({ value, onChange }: StyleSelectorProps) {
           return (
             <label
               key={style.id}
-              className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm cursor-pointer transition-colors ${
+              className={`flex justify-center items-center gap-2 rounded-md px-3 py-2 text-sm cursor-pointer transition-colors ${
                 isSelected
                   ? "border-2 border-accent bg-accent/10"
                   : "border border-border bg-muted hover:border-accent/50"
