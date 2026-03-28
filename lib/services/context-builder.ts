@@ -70,6 +70,10 @@ export function buildSystemPrompt(params: CreateGenerationInput): string {
   // --- Song length ---
   if (params.songLength === "short") {
     sections.push(`SONG LENGTH: Short song. Keep it concise: 100-150 words max. Use the short structure provided. Aim for 1-2 minutes.`);
+  } else if (params.songLength === "radio") {
+    sections.push(`SONG LENGTH: Radio edit. Go straight to the essentials: 150-200 words. Use the radio structure provided (no intro). Aim for ~3 minutes.`);
+  } else if (params.songLength === "long") {
+    sections.push(`SONG LENGTH: Long song. Develop the themes fully: 350-450 words. Use the long structure provided with extended sections. Aim for 5-6 minutes.`);
   }
 
   // --- Tags Suno ---
@@ -84,8 +88,14 @@ export function buildSystemPrompt(params: CreateGenerationInput): string {
   return sections.join("\n\n");
 }
 
-function buildGenreContext(genre: (typeof GENRES)[number], songLength: "short" | "standard"): string {
-  const structure = songLength === "short" ? genre.shortStructure : genre.typicalStructure;
+function buildGenreContext(genre: (typeof GENRES)[number], songLength: "short" | "radio" | "standard" | "long"): string {
+  const structureMap = {
+    short: genre.shortStructure,
+    radio: genre.radioStructure,
+    standard: genre.typicalStructure,
+    long: genre.longStructure,
+  };
+  const structure = structureMap[songLength];
   return [
     `GENRE: ${genre.name}`,
     `Description: ${genre.description}`,

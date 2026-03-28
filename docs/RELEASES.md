@@ -2,6 +2,14 @@
 
 ---
 
+## v1.4.0 — Structures & Durée *(28 mars 2026)*
+
+4 longueurs de structure par genre (short, radio, standard, long) pour les 26 genres musicaux. Sélecteur de durée à 4 options (Courte ~2 min, Radio ~3 min, Standard ~4 min, Longue ~5-6 min). Context Builder avec instructions IA adaptées par longueur. Random fill pondéré sur 4 valeurs. 7 fichiers modifiés, lint + build OK.
+
+➜ [Release Notes](releases/RELEASE_NOTES_v1.4.0.md) · [Changelog](changelogs/CHANGELOG_v1.4.0_STRUCTURES_DUREE.md)
+
+---
+
 ## v1.3.0 — UX & Random Composition *(28 mars 2026)*
 
 Remplissage aléatoire intelligent (bouton Random) avec 1 194 prompts d'exemple et probabilités pondérées (26 genres, tempo, langues, styles). Effet "tirage de loto" animé. 4 composants extraits de params-panel (tempo, langue, vocal, durée). Dropdown genres amélioré avec badges ✕. Layout recomposé. Corrections hydration + boutons imbriqués. Lint + build OK.

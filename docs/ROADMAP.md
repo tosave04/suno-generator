@@ -18,6 +18,7 @@
 | **v1.1** | Enrichissement musical | ✅ Terminée | Genres, langues, atmosphères, transparence IA |
 | **v1.2** | Composition avancée | ✅ Terminée | Multi-genre/langue, mood optionnel, structures courtes, vocal étendu |
 | **v1.3** | UX & Random Composition | ✅ Terminée | Random fill intelligent, probabilités pondérées, modularité composants |
+| **v1.4** | Structures & Durée | ✅ Terminée | 4 longueurs de structure par genre, sélecteur 4 options |
 
 ---
 
@@ -241,3 +242,20 @@
 - [x] Lint + build OK
 
 **Livrable :** Random fill intelligent avec probabilités pondérées, composants modulaires, UX fluide.
+
+---
+
+## v1.4 — Structures & Durée ✅ *Terminée*
+
+**Objectif :** Ajouter 2 nouvelles longueurs de structure par genre (radio, long) et adapter toute la chaîne.
+
+- [x] Ajout `radioStructure` et `longStructure` dans `GenreData` (`lib/data/types.ts`)
+- [x] 26 genres enrichis avec `radioStructure` (~3 min, pas d'intro) et `longStructure` (~5-6 min, sections étendues)
+- [x] Schéma Zod étendu à `["short", "radio", "standard", "long"]`
+- [x] Sélecteur de durée à 4 options (Courte, Radio, Standard, Longue)
+- [x] Context Builder : sélection par `structureMap` + instructions par longueur (mots cibles, durée)
+- [x] Random composition : poids pondérés `SONG_LENGTH_WEIGHTS` (short:1, radio:2, standard:5, long:2)
+- [x] Page compose : état `songLength` étendu à 4 valeurs
+- [x] Lint + build OK
+
+**Livrable :** 4 longueurs de structure par genre, sélection complète de la durée de composition.

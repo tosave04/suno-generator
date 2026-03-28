@@ -1,13 +1,17 @@
 "use client";
 
-const SONG_LENGTHS = [
-  { value: "short" as const, label: "Courte", hint: "~2 min" },
-  { value: "standard" as const, label: "Standard", hint: "~4 min" },
+type SongLength = "short" | "radio" | "standard" | "long";
+
+const SONG_LENGTHS: { value: SongLength; label: string; hint: string }[] = [
+  { value: "short", label: "Courte", hint: "~2 min" },
+  { value: "radio", label: "Radio", hint: "~3 min" },
+  { value: "standard", label: "Standard", hint: "~4 min" },
+  { value: "long", label: "Longue", hint: "~5-6 min" },
 ];
 
 interface SongLengthSelectorProps {
-  value: "short" | "standard";
-  onChange: (songLength: "short" | "standard") => void;
+  value: SongLength;
+  onChange: (songLength: SongLength) => void;
 }
 
 export function SongLengthSelector({ value, onChange }: SongLengthSelectorProps) {

@@ -48,8 +48,10 @@ const MOOD_NONE_CHANCE = 0.25;
 /** Probabilité qu'aucune ambiance ne soit sélectionnée */
 const ATMOSPHERE_NONE_CHANCE = 0.25;
 
-/** Probabilité de durée "standard" (vs "short") */
-const SONG_LENGTH_STANDARD_CHANCE = 0.8;
+/** Probabilité de durée par type */
+const SONG_LENGTH_WEIGHTS: ["short" | "radio" | "standard" | "long", number][] = [
+  ["short", 2], ["radio", 8], ["standard", 4], ["long", 1],
+];
 
 export function pickRandom<T>(arr: readonly T[], count: number): T[] {
   const shuffled = [...arr].sort(() => Math.random() - 0.5);
@@ -85,7 +87,7 @@ export interface RandomComposition {
   languages: string[];
   vocalStyle: string | null;
   atmosphere: string | null;
-  songLength: "short" | "standard";
+  songLength: "short" | "radio" | "standard" | "long";
   userPrompt: string;
 }
 
@@ -101,7 +103,7 @@ export function generateRandomComposition(): RandomComposition {
     languages: pickWeightedMultiple(LANGUAGE_WEIGHTS, langCount),
     vocalStyle: Math.random() < VOCAL_STYLE_NONE_CHANCE ? null : pickRandom(VOCAL_STYLE_VALUES, 1)[0],
     atmosphere: Math.random() < ATMOSPHERE_NONE_CHANCE ? null : pickRandom(ATMOSPHERES, 1)[0].id,
-    songLength: Math.random() < SONG_LENGTH_STANDARD_CHANCE ? "standard" : "short",
+    songLength: pickWeighted(SONG_LENGTH_WEIGHTS),
     userPrompt: pickRandom(SAMPLES, 1)[0],
   };
 }

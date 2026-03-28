@@ -23,7 +23,7 @@ export const createGenerationSchema = z.object({
     .max(2, "Maximum 2 langues"),
   vocalStyle: z.string().optional(),
   atmosphere: z.string().optional(),
-  songLength: z.enum(["short", "standard"]).default("standard"),
+  songLength: z.enum(["short", "radio", "standard", "long"]).default("standard"),
   songStructure: z.string().optional(),
   title: z.string().max(100, "Le titre ne doit pas dépasser 100 caractères").optional(),
 });

@@ -2,7 +2,7 @@
 
 > Application de composition musicale assistée par IA, générant des lyrics et prompts optimisés pour [Suno](https://suno.com).
 
-**Version :** `1.3.0` · **Statut :** v1.3 — UX & Random Composition · **Licence :** Privé
+**Version :** `1.4.0` · **Statut :** v1.4 — Structures & Durée · **Licence :** Privé
 
 ---
 
@@ -19,7 +19,7 @@ Suno Generator est une application web qui permet de créer des chansons de haut
 
 | Fonctionnalité | Description |
 |---|---|
-| **Composition assistée** | Sélection de genre (1-2 mix), mood (optionnel), style d'écriture, tempo, langue (1-2 mix), atmosphère, etc. |
+| **Composition assistée** | Sélection de genre (1-2 mix), mood (optionnel), style d'écriture, tempo, langue (1-2 mix), atmosphère, durée (4 longueurs), etc. |
 | **26 genres musicaux** | Pop, Rock, Hip-Hop, Jazz, K-Pop, Celtic, Afroworld, Disco, Indian, Japanese… |
 | **13 langues** | Anglais, Français, Espagnol, Portugais, Japonais, Coréen, Russe, Hindi, Arabe, Chinois, Elfique… |
 | **12 atmosphères culturelles** | Arabic, Asian, African, Latin, Western, European, Indian, Nordic, Russian, Slavic, Hybrid, Futuristic |

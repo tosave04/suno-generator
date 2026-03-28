@@ -38,7 +38,7 @@ export default function CompositionPage() {
   const [languages, setLanguages] = useState<string[]>(["en"]);
   const [vocalStyle, setVocalStyle] = useState<string | null>(null);
   const [atmosphere, setAtmosphere] = useState<string | null>(null);
-  const [songLength, setSongLength] = useState<"short" | "standard">("standard");
+  const [songLength, setSongLength] = useState<"short" | "radio" | "standard" | "long">("radio");
   const [userPrompt, setUserPrompt] = useState("");
 
   const [result, setResult] = useState<GenerationData | null>(null);

@@ -64,7 +64,7 @@ export function PromptInput({ value, onChange, onRandomFill, isRandomizing }: Pr
               onClick={() => { onChange(example); refreshExamples(); }}
               className="text-[10px] text-accent hover:underline"
             >
-              💡 {example.length > 80 ? `${example.slice(0, 80)}…` : example}
+              💡 {example.length > 60 ? `${example.slice(0, 60)}…` : example}
             </button>
           ))}
         </div>
