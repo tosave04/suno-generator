@@ -37,12 +37,14 @@ export function buildSystemPrompt(params: CreateGenerationInput): BuildResult {
   );
 
   // --- Genre(s) ---
-  for (const genreData of genresData) {
-    sections.push(buildGenreContext(genreData, params.songLength));
+  const isMultiGenre = genresData.length === 2;
+  for (let i = 0; i < genresData.length; i++) {
+    const role = isMultiGenre ? (i === 0 ? "primary" : "secondary") : "single";
+    sections.push(buildGenreContext(genresData[i], params.songLength, role));
   }
-  if (genresData.length === 2) {
+  if (isMultiGenre) {
     sections.push(
-      `GENRE MIX: Blend the two genres above into a cohesive hybrid. Take the main elements from each (instruments, rhythms, vocal characteristics) and fuse them. The positivePrompt should mention both genres.`
+      `GENRE MIX: ${genresData[0].name} is the DOMINANT genre — the overall structure, BPM, song form, and sonic identity must follow it. ${genresData[1].name} acts as a secondary flavor/influence: weave its characteristic instruments and textures into the mix without overriding the primary foundation. In the positivePrompt, list ${genresData[0].name} first, then ${genresData[1].name} as a secondary descriptor (e.g. "${genresData[0].name}, ${genresData[1].name} influences").`
     );
   }
 
@@ -105,7 +107,30 @@ export function buildSystemPrompt(params: CreateGenerationInput): BuildResult {
   };
 }
 
-function buildGenreContext(genre: (typeof GENRES)[number], songLength: "short" | "radio" | "standard" | "long"): string {
+/** Picks n random items from an array without repetition. */
+function pickRandom<T>(arr: T[], n: number): T[] {
+  return [...arr].sort(() => Math.random() - 0.5).slice(0, Math.min(n, arr.length));
+}
+
+function buildGenreContext(
+  genre: (typeof GENRES)[number],
+  songLength: "short" | "radio" | "standard" | "long",
+  role: "single" | "primary" | "secondary" = "single",
+): string {
+  const maxItems = role === "secondary" ? 2 : 3;
+
+  if (role === "secondary") {
+    return [
+      `SECONDARY GENRE (flavor/influence only): ${genre.name}`,
+      `Key instruments to incorporate: ${pickRandom(genre.keyInstruments, maxItems).join(", ")}`,
+      `Vocal flavors: ${pickRandom(genre.vocalCharacteristics, maxItems).join(", ")}`,
+      `Effective Suno tags: ${pickRandom(genre.sunoTags, maxItems).join(", ")}`,
+      `Prompt keywords to weave in: ${pickRandom(genre.promptKeywords, maxItems).join(", ")}`,
+      `Keywords to AVOID: ${pickRandom(genre.avoidKeywords, maxItems).join(", ")}`,
+    ].join("\n");
+  }
+
+  const label = role === "primary" ? "PRIMARY GENRE" : "GENRE";
   const structureMap = {
     short: genre.shortStructure,
     radio: genre.radioStructure,
@@ -113,18 +138,19 @@ function buildGenreContext(genre: (typeof GENRES)[number], songLength: "short" |
     long: genre.longStructure,
   };
   const structure = structureMap[songLength];
+
   return [
-    `GENRE: ${genre.name}`,
+    `${label}: ${genre.name}`,
     `Description: ${genre.description}`,
-    `Sub-genres available: ${genre.subGenres.join(", ")}`,
+    `Sub-genres available: ${pickRandom(genre.subGenres, maxItems).join(", ")}`,
     `Typical BPM: ${genre.typicalBpm.min}-${genre.typicalBpm.max}`,
     `Song structure to follow: ${structure.join(" → ")}`,
-    `Key instruments: ${genre.keyInstruments.join(", ")}`,
-    `Vocal characteristics: ${genre.vocalCharacteristics.join(", ")}`,
+    `Key instruments: ${pickRandom(genre.keyInstruments, maxItems).join(", ")}`,
+    `Vocal characteristics: ${pickRandom(genre.vocalCharacteristics, maxItems).join(", ")}`,
     `Historical context: ${genre.historicalContext}`,
-    `Effective Suno tags: ${genre.sunoTags.join(", ")}`,
-    `Prompt keywords to use: ${genre.promptKeywords.join(", ")}`,
-    `Keywords to AVOID: ${genre.avoidKeywords.join(", ")}`,
+    `Effective Suno tags: ${pickRandom(genre.sunoTags, maxItems).join(", ")}`,
+    `Prompt keywords to use: ${pickRandom(genre.promptKeywords, maxItems).join(", ")}`,
+    `Keywords to AVOID: ${pickRandom(genre.avoidKeywords, maxItems).join(", ")}`,
   ].join("\n");
 }
 
@@ -256,8 +282,8 @@ The JSON must have this exact structure:
 {
   "title": "Creative, original song title that reflects the lyrics theme and musical style",
   "lyrics": "Full lyrics with Suno tags ([Verse 1], [Chorus], etc.), newlines as \\n",
-  "positivePrompt": "Concise Suno 'Style of Music' descriptor. Comma-separated: genre, sub-genre, mood, vocal type, tempo/BPM, key/scale, instruments, production style, era/influences. Always in English. Max 200 chars.",
-  "negativePrompt": "Suno 'Exclude from Song' field. EVERY element MUST be prefixed with 'no'. Example: 'no autotune, no screaming, no heavy bass'. Always in English. Max 120 chars. null if not needed.",
+  "positivePrompt": "Suno 'Style of Music' field. Comma-separated, STRICT PRIORITY ORDER: (1) genre+subgenre, (2) vocal type ('male voice'/'female singer'), (3) mood/ambiance, (4) key instruments with SPECIFICITY ('fingerpicked acoustic guitar' not 'guitar'), (5) BPM value (e.g. '120 BPM'), (6) production style ('lo-fi'/'studio quality'/'raw'). Most important terms FIRST. CRITICAL: MAX 200 CHARS — Suno silently truncates beyond this limit. Always in English.",
+  "negativePrompt": "Suno 'Exclude from Song' field. EVERY element MUST be prefixed with 'no'. Example: 'no autotune, no screaming, no heavy bass'. MAX 5 ITEMS — too many exclusions produce a hollow, unbalanced mix. Always in English. Max 120 chars. null if not needed.",
   "sunoSettings": {
     "vocalGender": "Male"
   }
@@ -266,8 +292,8 @@ The JSON must have this exact structure:
 FIELD RULES:
 - title: Original, evocative, representative of the lyrics and mood. Not generic.
 - lyrics: Use proper Suno tags for EVERY section. Target 200-300 words (Suno 2-4 min).
-- positivePrompt: This goes into Suno's "Style of Music" field. Include BPM, key, instruments, vocal style, production quality — all as concise comma-separated descriptors. Do NOT repeat the genre if already obvious.
-- negativePrompt: This goes into Suno's "Exclude from Song" field. EVERY single element MUST start with "no" (e.g., "no autotune, no screaming"). Never omit the "no" prefix.
+- positivePrompt: Suno's "Style of Music" field. STRICT PRIORITY ORDER (Suno weights left-to-right — first terms dominate): genre → vocal type → mood → specific instruments → BPM → production quality. Use precise vocabulary: "Rhodes electric piano" > "piano", "fingerpicked acoustic guitar" > "guitar", "808 bass" > "bass". HARD LIMIT: 200 chars — Suno silently ignores anything beyond. Do NOT reference artist names (Suno blocks them; use style descriptions instead, e.g. "crooner 50s style" instead of an artist name).
+- negativePrompt: Suno's "Exclude from Song" field. EVERY single element MUST start with "no" (e.g., "no autotune, no screaming"). Limit to ≤5 items — too many destabilize the mix. Prefer describing what you want positively rather than adding more exclusions.
 - sunoSettings.vocalGender: MUST be exactly "Male" or "Female" — no other value is accepted. For duets, choirs, or mixed vocals, pick the dominant or lead vocal gender. Default to "Male" if unsure.
 
 NOTE: weirdness and styleInfluence are pre-calculated by the system. Do NOT include them in your response.
@@ -277,10 +303,14 @@ Adapt your creative approach accordingly:
 - Style Influence ${settings.styleInfluence}: ${settings.styleInfluence <= 30 ? "Interpret the style loosely, take creative liberties." : settings.styleInfluence <= 60 ? "Follow the style description moderately." : "Follow the style description closely and faithfully."}
 
 SUNO BEST PRACTICES:
-- Keep positivePrompt descriptive but concise — Suno works best with focused style descriptions
-- Use specific musical terms: "fingerpicked acoustic guitar" > "guitar"
-- Include production descriptors: "lo-fi", "polished", "raw", "studio quality"
-- Negative prompt works best with clear, specific exclusions
+- positivePrompt priority order: genre+subgenre first, then vocal type, mood, instruments, BPM, production — critical terms at the start
+- Use specific musical vocabulary: "fingerpicked acoustic guitar" > "guitar", "Rhodes electric piano" > "piano", "808 bass" > "bass"
+- Always include an explicit BPM value for reliable tempo control (e.g. "120 BPM")
+- Include production descriptors: "lo-fi", "polished", "raw", "warm analog", "studio quality"
+- negativePrompt: "no X" prefix required on EVERY item — "no guitar solo" not "avoid guitar solos"
+- negativePrompt: max 5 items — beyond that, the mix becomes hollow and unbalanced
+- Never reference artist names (copyright enforcement) — describe the style instead
+- Prefer adding positive descriptors over multiplying exclusions
 
 Do NOT include any text outside the JSON object`;
 }

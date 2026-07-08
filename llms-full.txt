@@ -1,0 +1,1834 @@
+# llms-full.txt — Suno Generator
+# Mode d'emploi exhaustif pour reproduire, hors de cette application,
+# la construction d'un system prompt destiné à un LLM générant
+# des chansons pour Suno AI (format 2026).
+#
+# Ce document agrège :
+#   1. Les paramètres d'entrée (schéma utilisateur)
+#   2. L'algorithme de construction du system prompt (Context Builder)
+#   3. L'algorithme de calcul des réglages Suno (weirdness, styleInfluence)
+#   4. Le format de sortie JSON attendu du LLM
+#   5. La totalité du corpus de référence (genres, moods, styles, atmosphères,
+#      tags Suno, règles musicales, langues, tempos)
+#
+# Sources internes (commit du projet) :
+#   - lib/services/context-builder.ts
+#   - lib/services/settings-calculator.ts
+#   - lib/services/deepseek.ts
+#   - lib/schemas/generation.ts
+#   - lib/data/genres.ts | moods.ts | styles.ts | atmospheres.ts
+#   - lib/data/suno-tags.ts | music-rules.ts | types.ts
+#   - docs/suno/01-LYRICS-STRUCTURE.md
+#   - docs/suno/02-PROMPTS.md
+#   - docs/suno/03-SETTINGS-ADVANCED.md
+#   - docs/suno/04-SYSTEM-PROMPTS.md
+#
+# Usage : fournir à un LLM ce fichier + la requête utilisateur (description libre).
+# Le LLM doit suivre les sections « ALGORITHME » et « OUTPUT FORMAT » à la lettre.
+#
+# ============================================================================
+
+================================================================================
+SECTION 1 — PARAMÈTRES D'ENTRÉE (CreateGenerationInput)
+================================================================================
+
+Schéma Zod (lib/schemas/generation.ts) :
+
+  userPrompt      string  (10..2000 chars) — description libre fournie par l'utilisateur.
+  genres          string[] (1..2)          — IDs de genres (cf. SECTION 5.1).
+  subGenre        string?                  — sous-genre libre.
+  mood            string?                  — ID de mood (cf. SECTION 5.2).
+  style           string  (requis)         — ID de writing style (cf. SECTION 5.3).
+  tempo           string?                  — "Very Slow"|"Slow"|"Medium"|"Fast"|"Very Fast".
+  languages       string[] (1..2)          — codes ISO (cf. SECTION 5.6).
+  vocalStyle      string?                  — libellé libre ("Soft", "Powerful", "Robotic"...).
+  atmosphere      string?                  — ID d'ambiance culturelle (cf. SECTION 5.4).
+  songLength      enum                     — "short" | "radio" | "standard" | "long" (default standard).
+  songStructure   string?                  — structure libre forcée (override).
+  title           string? (<=100)          — titre forcé éventuel.
+
+================================================================================
+SECTION 2 — ALGORITHME DE CONSTRUCTION DU SYSTEM PROMPT
+================================================================================
+
+Le system prompt est un texte plat assemblé par concaténation de sections
+séparées par DOUBLE saut de ligne ("\n\n"). Les sections sont ajoutées
+DANS L'ORDRE ci-dessous. Toutes les valeurs aléatoires sont tirées au
+runtime (pickRandom = shuffle + slice(N)).
+
+ORDRE DES SECTIONS :
+
+  S0  Rôle (toujours en premier, texte fixe)
+  S1  Genre(s) — 1 ou 2 blocs (PRIMARY + SECONDARY) + note "GENRE MIX" si 2
+  S2  Mood (si fourni)
+  S3  Writing style
+  S4  Tempo (si fourni)
+  S5  Langue(s)
+  S6  Vocal style (si fourni)
+  S7  Atmosphère culturelle (si fournie)
+  S8  Song length (si != "standard")
+  S9  Référence des tags Suno (structure + delivery)
+  S10 Règles musicales (filtrées sur le 1er genre, top 10)
+  S11 OUTPUT FORMAT (avec weirdness/styleInfluence pré-calculés injectés)
+
+--------------------------------------------------------------------------------
+S0 — RÔLE (TEXTE FIXE)
+--------------------------------------------------------------------------------
+
+"You are an expert songwriter and music producer specializing in creating
+lyrics and prompts for Suno AI music generation (2026 format). You produce
+professional, creative, and emotionally resonant content."
+
+--------------------------------------------------------------------------------
+S1 — GENRE(S)
+--------------------------------------------------------------------------------
+
+Si 1 genre : un seul bloc, role = "single", label = "GENRE".
+Si 2 genres : 2 blocs successifs :
+   - genre[0] : role = "primary", label = "PRIMARY GENRE"
+   - genre[1] : role = "secondary", label = "SECONDARY GENRE (flavor/influence only)"
+   PUIS ajouter ce texte :
+   "GENRE MIX: {primary.name} is the DOMINANT genre — the overall structure,
+    BPM, song form, and sonic identity must follow it. {secondary.name} acts
+    as a secondary flavor/influence: weave its characteristic instruments and
+    textures into the mix without overriding the primary foundation. In the
+    positivePrompt, list {primary.name} first, then {secondary.name} as a
+    secondary descriptor (e.g. \"{primary.name}, {secondary.name} influences\")."
+
+BLOC PRIMARY / SINGLE (maxItems = 3) :
+  {LABEL}: {genre.name}
+  Description: {genre.description}
+  Sub-genres available: {pickRandom(genre.subGenres, 3).join(", ")}
+  Typical BPM: {genre.typicalBpm.min}-{genre.typicalBpm.max}
+  Song structure to follow: {structure.join(" → ")}
+  Key instruments: {pickRandom(genre.keyInstruments, 3).join(", ")}
+  Vocal characteristics: {pickRandom(genre.vocalCharacteristics, 3).join(", ")}
+  Historical context: {genre.historicalContext}
+  Effective Suno tags: {pickRandom(genre.sunoTags, 3).join(", ")}
+  Prompt keywords to use: {pickRandom(genre.promptKeywords, 3).join(", ")}
+  Keywords to AVOID: {pickRandom(genre.avoidKeywords, 3).join(", ")}
+
+  Où `structure` dépend de songLength :
+    short    → genre.shortStructure
+    radio    → genre.radioStructure
+    standard → genre.typicalStructure
+    long     → genre.longStructure
+
+BLOC SECONDARY (maxItems = 2, pas de structure ni BPM ni historique) :
+  SECONDARY GENRE (flavor/influence only): {genre.name}
+  Key instruments to incorporate: {pickRandom(genre.keyInstruments, 2).join(", ")}
+  Vocal flavors: {pickRandom(genre.vocalCharacteristics, 2).join(", ")}
+  Effective Suno tags: {pickRandom(genre.sunoTags, 2).join(", ")}
+  Prompt keywords to weave in: {pickRandom(genre.promptKeywords, 2).join(", ")}
+  Keywords to AVOID: {pickRandom(genre.avoidKeywords, 2).join(", ")}
+
+--------------------------------------------------------------------------------
+S2 — MOOD
+--------------------------------------------------------------------------------
+
+  MOOD: {mood.name}
+  Description: {mood.description}
+  Lexical fields to draw from: {mood.lexicalFields.join(", ")}
+  Musical characteristics: {mood.musicalCharacteristics.join(", ")}
+  Prompt modifiers: {mood.promptModifiers.join(", ")}
+
+--------------------------------------------------------------------------------
+S3 — WRITING STYLE
+--------------------------------------------------------------------------------
+
+  WRITING STYLE: {style.name}
+  Description: {style.description}
+  Rules:
+  - {rule_1}
+  - {rule_2}
+  ...
+  Example patterns:
+    "{example_1}"
+    "{example_2}"
+    ...
+  Suno formatting tips:
+  - {tip_1}
+  - {tip_2}
+  ...
+
+--------------------------------------------------------------------------------
+S4 — TEMPO
+--------------------------------------------------------------------------------
+
+Mapping (lib/services/context-builder.ts → buildTempoContext) :
+
+  Very Slow → "50-70 BPM. Extremely slow and deliberate. Long sustained notes,
+               spacious phrasing. Include 'slow tempo, 60 BPM' in positivePrompt."
+  Slow      → "70-90 BPM. Relaxed pace, breathing room. Ballad-friendly.
+               Include 'slow tempo, 80 BPM' in positivePrompt."
+  Medium    → "90-120 BPM. Standard comfortable pace.
+               Include 'mid-tempo, 110 BPM' in positivePrompt."
+  Fast      → "120-150 BPM. Energetic, driving rhythm.
+               Include 'uptempo, 135 BPM' in positivePrompt."
+  Very Fast → "150+ BPM. High energy, rapid delivery.
+               Include 'fast tempo, 160 BPM' in positivePrompt."
+
+Section finale :
+  TEMPO: {detail}
+  IMPORTANT: Always include the specific BPM value in the positivePrompt to
+  ensure Suno respects the tempo. Adapt syllable density and rhythmic flow
+  accordingly.
+
+--------------------------------------------------------------------------------
+S5 — LANGUE(S)
+--------------------------------------------------------------------------------
+
+Mapping codes ISO → libellés (LANGUAGE_MAP) :
+  en → English          fr → French           es → Spanish
+  pt → Portuguese       ja → Japanese         ko → Korean
+  de → German           it → Italian          ru → Russian
+  hi → Hindi            ar → Arabic           zh → Chinese
+  qya → Elvish (Quenya)
+  (toute clé inconnue retombe sur "English")
+
+CAS 1 — Elvish présent (qya ∈ languages) :
+  Note Elvish (texte fixe) :
+   "Quenya is an Elvish language created by J.R.R. Tolkien, phonetically very
+    close to Finnish. Use Finnish-inspired phonology: soft vowels (a, e, i, o, u),
+    liquid consonants (l, r, n, m), diphthongs. Avoid harsh consonants. Words
+    should sound ethereal and flowing."
+
+  Si autre(s) langue(s) en plus du Quenya :
+    "LANGUAGE: Write lyrics mixing {otherLangs.join(' and ')} with Elvish
+     (Quenya) passages. {ELVISH_NOTE} The positive and negative prompts MUST
+     always be in English (Suno requirement)."
+  Sinon :
+    "LANGUAGE: Write all lyrics in Elvish (Quenya). {ELVISH_NOTE} The positive
+     and negative prompts MUST always be in English (Suno requirement)."
+
+CAS 2 — 2 langues classiques :
+  "LANGUAGE: Write lyrics mixing {lang1} and {lang2}. Alternate naturally
+   between the two languages (e.g., verses in one, chorus in the other, or
+   mixed within sections). The positive and negative prompts MUST always be
+   in English (Suno requirement)."
+
+CAS 3 — 1 langue :
+  "LANGUAGE: Write all lyrics in {lang}. The positive and negative prompts
+   MUST always be in English (Suno requirement)."
+
+--------------------------------------------------------------------------------
+S6 — VOCAL STYLE
+--------------------------------------------------------------------------------
+
+Cas spécial vocalStyle == "Robotic" (texte fixe multiligne) :
+  VOCAL STYLE: Robotic / Synthetic voice.
+  Write lyrics suited for a robotic, synthesized vocal delivery.
+  - Use short, clipped phrases and repetitive patterns
+  - Favor mechanical rhythm over natural prosody
+  - Include vocoder/auto-tune-friendly syllables (sustained vowels, simple consonants)
+  - Lyrics can reference technology, circuits, binary, digital themes (but not mandatory)
+  IMPORTANT for positivePrompt: MUST include "vocoder, robotic voice,
+    synthesized vocals, auto-tune" descriptors.
+  IMPORTANT for negativePrompt: include "no natural vocals, no acoustic voice".
+
+Autre cas (texte générique) :
+  "VOCAL STYLE: Write lyrics suited for a \"{vocalStyle}\" vocal delivery.
+   Adapt phrasing, register, and breathing patterns accordingly."
+
+--------------------------------------------------------------------------------
+S7 — ATMOSPHÈRE CULTURELLE
+--------------------------------------------------------------------------------
+
+  CULTURAL ATMOSPHERE: {atmosphere.name}
+  Description: {atmosphere.description}
+  Scales/modes to incorporate: {atmosphere.scales.join(", ")}
+  Characteristic instruments: {atmosphere.keyInstruments.join(", ")}
+  Sonic characteristics: {atmosphere.characteristics.join(", ")}
+  Prompt keywords to weave in: {atmosphere.promptKeywords.join(", ")}
+  Keywords to AVOID: {atmosphere.avoidKeywords.join(", ")}
+  IMPORTANT: Blend this cultural atmosphere into the genre and mood. Include
+  atmosphere-specific instruments and scales in the positivePrompt. The
+  cultural color should enhance, not override, the chosen genre.
+
+--------------------------------------------------------------------------------
+S8 — SONG LENGTH
+--------------------------------------------------------------------------------
+
+  short  → "SONG LENGTH: Short song. Keep it concise: 100-150 words max.
+            Use the short structure provided. Aim for 1-2 minutes."
+  radio  → "SONG LENGTH: Radio edit. Go straight to the essentials: 150-200
+            words. Use the radio structure provided (no intro). Aim for ~3 minutes."
+  long   → "SONG LENGTH: Long song. Develop the themes fully: 350-450 words.
+            Use the long structure provided with extended sections. Aim for 5-6 minutes."
+  standard → (aucune section S8 ajoutée)
+
+--------------------------------------------------------------------------------
+S9 — RÉFÉRENCE TAGS SUNO
+--------------------------------------------------------------------------------
+
+  SUNO TAGS REFERENCE:
+  Structure tags (use these to organize lyrics):
+    {tag} — {usage}   (pour chaque tag de catégorie "structure")
+  Delivery/vocal tags (use inline where needed):
+    {tag} — {usage}   (pour chaque tag de catégorie "delivery")
+
+Le détail des tags est en SECTION 5.5.
+
+--------------------------------------------------------------------------------
+S10 — RÈGLES DE THÉORIE MUSICALE
+--------------------------------------------------------------------------------
+
+Filtrer MUSIC_RULES sur le 1er genre (params.genres[0]) :
+  applicableRules = MUSIC_RULES.filter(r =>
+      r.applicableGenres === "all" || r.applicableGenres.includes(genreId))
+Prendre les 10 premières.
+
+  MUSIC THEORY RULES TO FOLLOW:
+  - [{category}] {title}: {description}
+  - ...
+
+Toutes les règles sont listées en SECTION 5.7.
+
+--------------------------------------------------------------------------------
+S11 — OUTPUT FORMAT (intègre les réglages calculés)
+--------------------------------------------------------------------------------
+
+Voir SECTION 4 ci-dessous (bloc à coller tel quel, en remplaçant
+{settings.weirdness} et {settings.styleInfluence} par les valeurs calculées
+en SECTION 3, et en ajoutant les phrases conditionnelles).
+
+================================================================================
+SECTION 3 — CALCUL DES RÉGLAGES SUNO (weirdness, styleInfluence)
+================================================================================
+
+Source : lib/services/settings-calculator.ts.
+Les deux réglages sont des entiers [0..100]. Toujours appliquer clamp(0,100)
+et arrondir (Math.round) à la fin. Variance aléatoire = entier uniforme
+dans [-9, +9] AJOUTÉ après tous les modificateurs.
+
+ALGORITHME (pour chaque réglage) :
+
+  1. base = moyenne des bases des genres sélectionnés
+            (default 42 pour weirdness, 53 pour styleInfluence si genre inconnu)
+  2. base += MOOD_MOD[mood] si mood fourni (sinon 0)
+  3. base += STYLE_MOD[style]                 (0 si style inconnu)
+  4. base += rand_int(-9, +9)
+  5. result = clamp_round(base)
+
+WEIRDNESS — base par genre :
+  pop=34, rock=43, hiphop=38, jazz=60, electronic=55, rnb=37, country=30,
+  classical=33, metal=50, folk=30, indie=53, latin=38, reggae=35, blues=38,
+  punk=50, ambient=67, funk=43, soul=34, disco=33, kpop=34, celtic=33,
+  afroworld=45, "16bit"=60, middleeastern=45, indian=45, japanese=50
+  DEFAULT_WEIRDNESS_BASE = 42
+
+WEIRDNESS — modificateurs mood :
+  joyful=-12, melancholic=-8, energetic=+12, calm=-18, aggressive=+16,
+  romantic=-10, dark=+18, uplifting=-8, nostalgic=-14, epic=+8, chaos=+40
+
+WEIRDNESS — modificateurs writing style :
+  poetic=-5, storytelling=-5, direct=-10, abstract=+15,
+  conversational=-5, anthem=0
+
+STYLE_INFLUENCE — base par genre :
+  pop=68, rock=58, hiphop=53, jazz=43, electronic=48, rnb=58, country=73,
+  classical=78, metal=63, folk=70, indie=48, latin=58, reggae=63, blues=58,
+  punk=53, ambient=38, funk=53, soul=60, disco=63, kpop=68, celtic=68,
+  afroworld=53, "16bit"=48, middleeastern=58, indian=58, japanese=53
+  DEFAULT_STYLE_INFLUENCE_BASE = 53
+
+STYLE_INFLUENCE — modificateurs mood :
+  joyful=+12, melancholic=+8, energetic=-6, calm=+15, aggressive=-16,
+  romantic=+18, dark=-12, uplifting=+10, nostalgic=+16, epic=+14, chaos=-30
+
+STYLE_INFLUENCE — modificateurs writing style :
+  poetic=+5, storytelling=+10, direct=+5, abstract=-15,
+  conversational=0, anthem=+10
+
+================================================================================
+SECTION 4 — OUTPUT FORMAT (à coller en fin de system prompt)
+================================================================================
+
+Bloc texte produit par buildOutputFormat(settings). Conserver les guillemets,
+backslashes (\\n) et la phrase conditionnelle dépendant des valeurs calculées.
+
+----- BEGIN OUTPUT FORMAT BLOCK -----
+
+OUTPUT FORMAT:
+You MUST respond with ONLY a valid JSON object, no markdown, no explanation,
+no text before or after.
+The JSON must have this exact structure:
+{
+  "title": "Creative, original song title that reflects the lyrics theme and musical style",
+  "lyrics": "Full lyrics with Suno tags ([Verse 1], [Chorus], etc.), newlines as \\n",
+  "positivePrompt": "Suno 'Style of Music' field. Comma-separated, STRICT PRIORITY ORDER: (1) genre+subgenre, (2) vocal type ('male voice'/'female singer'), (3) mood/ambiance, (4) key instruments with SPECIFICITY ('fingerpicked acoustic guitar' not 'guitar'), (5) BPM value (e.g. '120 BPM'), (6) production style ('lo-fi'/'studio quality'/'raw'). Most important terms FIRST. CRITICAL: MAX 200 CHARS — Suno silently truncates beyond this limit. Always in English.",
+  "negativePrompt": "Suno 'Exclude from Song' field. EVERY element MUST be prefixed with 'no'. Example: 'no autotune, no screaming, no heavy bass'. MAX 5 ITEMS — too many exclusions produce a hollow, unbalanced mix. Always in English. Max 120 chars. null if not needed.",
+  "sunoSettings": {
+    "vocalGender": "Male"
+  }
+}
+
+FIELD RULES:
+- title: Original, evocative, representative of the lyrics and mood. Not generic.
+- lyrics: Use proper Suno tags for EVERY section. Target 200-300 words (Suno 2-4 min).
+- positivePrompt: Suno's "Style of Music" field. STRICT PRIORITY ORDER (Suno weights
+  left-to-right — first terms dominate): genre → vocal type → mood → specific
+  instruments → BPM → production quality. Use precise vocabulary: "Rhodes electric
+  piano" > "piano", "fingerpicked acoustic guitar" > "guitar", "808 bass" > "bass".
+  HARD LIMIT: 200 chars — Suno silently ignores anything beyond. Do NOT reference
+  artist names (Suno blocks them; use style descriptions instead, e.g. "crooner 50s
+  style" instead of an artist name).
+- negativePrompt: Suno's "Exclude from Song" field. EVERY single element MUST start
+  with "no" (e.g., "no autotune, no screaming"). Limit to ≤5 items — too many
+  destabilize the mix. Prefer describing what you want positively rather than adding
+  more exclusions.
+- sunoSettings.vocalGender: MUST be exactly "Male" or "Female" — no other value is
+  accepted. For duets, choirs, or mixed vocals, pick the dominant or lead vocal
+  gender. Default to "Male" if unsure.
+
+NOTE: weirdness and styleInfluence are pre-calculated by the system. Do NOT include
+them in your response.
+Pre-calculated values: weirdness={W}, styleInfluence={S}.
+Adapt your creative approach accordingly:
+- Weirdness {W}: {W<=25 ? "Stay conventional and safe."
+                : W<=50 ? "Balanced creativity, some surprises welcome."
+                : W<=70 ? "Be experimental, unexpected arrangements."
+                :         "Go wild — chaotic, avant-garde, unpredictable."}
+- Style Influence {S}: {S<=30 ? "Interpret the style loosely, take creative liberties."
+                       : S<=60 ? "Follow the style description moderately."
+                       :         "Follow the style description closely and faithfully."}
+
+SUNO BEST PRACTICES:
+- positivePrompt priority order: genre+subgenre first, then vocal type, mood,
+  instruments, BPM, production — critical terms at the start
+- Use specific musical vocabulary: "fingerpicked acoustic guitar" > "guitar",
+  "Rhodes electric piano" > "piano", "808 bass" > "bass"
+- Always include an explicit BPM value for reliable tempo control (e.g. "120 BPM")
+- Include production descriptors: "lo-fi", "polished", "raw", "warm analog",
+  "studio quality"
+- negativePrompt: "no X" prefix required on EVERY item — "no guitar solo" not
+  "avoid guitar solos"
+- negativePrompt: max 5 items — beyond that, the mix becomes hollow and unbalanced
+- Never reference artist names (copyright enforcement) — describe the style instead
+- Prefer adding positive descriptors over multiplying exclusions
+
+Do NOT include any text outside the JSON object
+
+----- END OUTPUT FORMAT BLOCK -----
+
+Validation côté serveur (Zod, lib/schemas/generation.ts) :
+  title: string non vide
+  lyrics: string non vide
+  positivePrompt: string non vide
+  negativePrompt: string | null
+  sunoSettings: {
+    vocalGender: "Male" | "Female" (catch → "Male")
+    weirdness?: number 0..100
+    styleInfluence?: number 0..100
+  }
+
+Si la réponse du LLM est encapsulée dans un bloc ``` ```json, il faut le
+décaper avant parsing. Le client n'autorise PAS d'autre champ hors de
+l'objet JSON.
+
+================================================================================
+SECTION 5 — DONNÉES DE RÉFÉRENCE
+================================================================================
+(suite dans la SECTION 5.1 — Genres)
+
+--------------------------------------------------------------------------------
+SECTION 5.1 — GENRES (26 entrées)
+--------------------------------------------------------------------------------
+
+Schéma par entrée :
+  id | name | description | subGenres
+  typicalBpm | typicalStructure | shortStructure | radioStructure | longStructure
+  keyInstruments | vocalCharacteristics | historicalContext
+  sunoTags | promptKeywords | avoidKeywords
+
+────────────────────────────────────────────────────────────────────────────────
+[1] id="pop" name="Pop"
+description: Genre mainstream axé sur des mélodies accrocheuses, structures
+  simples et production soignée. Privilégie l'accessibilité et les hooks mémorables.
+subGenres: Synth Pop, Indie Pop, Electropop, Dance Pop, Art Pop, Dream Pop,
+  Chamber Pop, Power Pop
+typicalBpm: 100-130
+typicalStructure: Intro → Verse → Pre-Chorus → Chorus → Verse → Pre-Chorus →
+  Chorus → Bridge → Chorus → Outro
+shortStructure: Verse → Chorus → Verse → Chorus → Outro
+radioStructure: Verse → Pre-Chorus → Chorus → Verse → Chorus → Outro
+longStructure: Intro → Verse → Pre-Chorus → Chorus → Verse → Pre-Chorus →
+  Chorus → Solo → Bridge → Chorus → Chorus → Outro
+keyInstruments: synth, electric guitar, bass, drums, piano, strings
+vocalCharacteristics: clean vocals, melodic, harmonies, catchy hooks, vocal runs
+historicalContext: Émerge dans les années 1950-60 comme forme commerciale du
+  rock and roll. Évolue en absorbant les tendances : disco (70s), synthétiseurs
+  (80s), R&B/hip-hop (90s-2000s), EDM (2010s), bedroom pop (2020s).
+sunoTags: pop, catchy, radio-friendly, mainstream, polished production
+promptKeywords: catchy melody, polished, hook-driven, radio-friendly, bright,
+  sing-along, upbeat
+avoidKeywords: raw, distorted, lo-fi, experimental noise, death growl
+
+────────────────────────────────────────────────────────────────────────────────
+[2] id="rock" name="Rock"
+description: Genre fondé sur les guitares électriques, batterie énergique et
+  structures couplet-refrain. Large spectre du soft au hard rock.
+subGenres: Indie Rock, Alternative Rock, Classic Rock, Hard Rock, Progressive
+  Rock, Garage Rock, Post-Rock, Psychedelic Rock
+typicalBpm: 110-150
+typicalStructure: Intro → Verse → Chorus → Verse → Chorus → Solo → Bridge →
+  Chorus → Outro
+shortStructure: Verse → Chorus → Verse → Chorus → Outro
+radioStructure: Verse → Chorus → Verse → Chorus → Solo → Outro
+longStructure: Intro → Verse → Chorus → Verse → Chorus → Solo → Bridge →
+  Verse → Chorus → Chorus → Outro
+keyInstruments: electric guitar, bass guitar, drums, rhythm guitar, keyboard
+vocalCharacteristics: powerful, raw, expressive, gritty, belt vocals, backing vocals
+historicalContext: Né dans les 1950s de la fusion blues/country/R&B. Explosion
+  60s-70s (Beatles, Led Zeppelin, Pink Floyd). Diversification : punk, grunge,
+  alt-rock, post-rock.
+sunoTags: rock, guitar-driven, energetic, band sound, electric
+promptKeywords: guitar riff, driving beat, powerful vocals, electric guitar,
+  raw energy, anthem
+avoidKeywords: autotune, trap beat, lo-fi chill, smooth jazz, ambient drone
+
+────────────────────────────────────────────────────────────────────────────────
+[3] id="hiphop" name="Hip-Hop"
+description: Genre urbain centré sur le flow vocal (rap), beats puissants et
+  expression personnelle. Lié à la culture de rue, storytelling et authenticité.
+subGenres: Trap, Boom Bap, Conscious Hip-Hop, Drill, Lo-fi Hip-Hop, Mumble Rap,
+  Gangsta Rap, Cloud Rap
+typicalBpm: 70-160
+typicalStructure: Intro → Verse → Hook → Verse → Hook → Verse → Hook → Outro
+shortStructure: Verse → Hook → Verse → Hook
+radioStructure: Verse → Hook → Verse → Hook → Outro
+longStructure: Intro → Verse → Hook → Verse → Hook → Verse → Bridge → Hook → Outro
+keyInstruments: 808 bass, hi-hats, snare, sampler, synth pad, piano
+vocalCharacteristics: rap flow, rhythmic delivery, ad-libs, autotune, spoken
+  word, aggressive
+historicalContext: Né dans le Bronx (NYC) 1970s. Block party → charts mondiaux.
+  Golden Age (80s-90s), Dirty South (2000s), trap (2010s), drill/hyperpop (2020s).
+sunoTags: hip-hop, rap, beats, urban, flow
+promptKeywords: hard-hitting beat, rap flow, bass-heavy, rhythmic, 808,
+  confident delivery
+avoidKeywords: acoustic guitar, orchestral, folk, country twang, operatic vocals
+
+────────────────────────────────────────────────────────────────────────────────
+[4] id="jazz" name="Jazz"
+description: Genre sophistiqué fondé sur l'improvisation, harmonies riches
+  (accords 7e, 9e, 13e) et swing. Du smooth jazz à l'avant-garde.
+subGenres: Smooth Jazz, Bebop, Cool Jazz, Fusion, Vocal Jazz, Latin Jazz,
+  Free Jazz, Nu Jazz
+typicalBpm: 70-200
+typicalStructure: Intro → Verse → Solo → Solo → Verse → Outro
+shortStructure: Verse → Solo → Verse
+radioStructure: Verse → Solo → Verse → Outro
+longStructure: Intro → Verse → Solo → Solo → Verse → Solo → Verse → Outro
+keyInstruments: saxophone, trumpet, piano, upright bass, drums (brushes), vibraphone
+vocalCharacteristics: scat singing, smooth, intimate, breathy, improvisational,
+  swing phrasing
+historicalContext: Né à La Nouvelle-Orléans début XXe, fusion africaine/européenne.
+  Bebop (40s), cool jazz (50s), fusion (70s). Pilier de la musique savante populaire.
+sunoTags: jazz, swing, smooth, improvisation, sophisticated
+promptKeywords: jazz harmony, swing feel, improvisation, sophisticated chords,
+  smoky atmosphere, walking bass
+avoidKeywords: heavy distortion, screaming vocals, trap beat, EDM drop, punk energy
+
+────────────────────────────────────────────────────────────────────────────────
+[5] id="electronic" name="Electronic"
+description: Produit électroniquement, axé sur synthés, beats programmés et
+  sound design. Spectre immense, du chill à l'intense.
+subGenres: House, Techno, Trance, Dubstep, Drum and Bass, Ambient, Future Bass, EDM
+typicalBpm: 90-175
+typicalStructure: Intro → Verse → Drop → Break → Verse → Drop → Outro
+shortStructure: Intro → Drop → Break → Drop
+radioStructure: Drop → Break → Verse → Drop → Outro
+longStructure: Intro → Verse → Drop → Break → Verse → Drop → Break → Drop → Outro
+keyInstruments: synthesizer, drum machine, sampler, sub bass, arpeggiator, vocoder
+vocalCharacteristics: processed, chopped vocals, vocoder, ethereal, minimal
+  lyrics, pitched
+historicalContext: Pionniers Kraftwerk, Moroder (70s). Rave culture (80s-90s).
+  Genre dominant : house, techno, trance, EDM mainstream (2010s).
+sunoTags: electronic, synth, beat-driven, produced, digital
+promptKeywords: synth-heavy, pulsing beat, electronic production, build-up and
+  drop, atmospheric, bass-driven
+avoidKeywords: acoustic, unplugged, folk guitar, country fiddle, orchestral strings
+
+────────────────────────────────────────────────────────────────────────────────
+[6] id="rnb" name="R&B"
+description: Genre vocal mêlant soul, funk et influences pop/hip-hop.
+  Performances vocales, grooves sensuels, thèmes romantiques.
+subGenres: Contemporary R&B, Neo-Soul, Alternative R&B, Quiet Storm, New Jack
+  Swing, PBR&B, Trap Soul
+typicalBpm: 65-110
+typicalStructure: Intro → Verse → Pre-Chorus → Chorus → Verse → Chorus →
+  Bridge → Chorus → Outro
+shortStructure: Verse → Chorus → Verse → Chorus
+radioStructure: Verse → Pre-Chorus → Chorus → Verse → Chorus → Outro
+longStructure: Intro → Verse → Pre-Chorus → Chorus → Verse → Pre-Chorus →
+  Chorus → Bridge → Solo → Chorus → Outro
+keyInstruments: electric piano, synth pad, bass, drums, strings, guitar
+vocalCharacteristics: melismatic, soulful, falsetto, smooth, vocal runs, harmonies
+historicalContext: Blues/gospel afro-américain (1940s). Soul (60s), funk (70s),
+  new jack swing (80s-90s), contemporary R&B (2000s+). Fusion trap/electronic.
+sunoTags: r&b, soul, smooth, groove, vocal
+promptKeywords: smooth vocals, soulful, groove, sensual, warm, vocal harmonies,
+  laid-back beat
+avoidKeywords: harsh distortion, blast beat, punk aggression, heavy metal, screamo
+
+────────────────────────────────────────────────────────────────────────────────
+[7] id="country" name="Country"
+description: Genre américain enraciné dans folk, blues et western. Guitare
+  acoustique, storytelling et authenticité au premier plan.
+subGenres: Country Pop, Outlaw Country, Bluegrass, Americana, Country Rock,
+  Bro-Country, Alt-Country, Nashville Sound
+typicalBpm: 80-140
+typicalStructure: Intro → Verse → Chorus → Verse → Chorus → Bridge → Chorus → Outro
+shortStructure: Verse → Chorus → Verse → Chorus
+radioStructure: Verse → Chorus → Verse → Chorus → Bridge → Outro
+longStructure: Intro → Verse → Chorus → Verse → Chorus → Bridge → Solo →
+  Verse → Chorus → Outro
+keyInstruments: acoustic guitar, steel guitar, fiddle, banjo, bass, drums
+vocalCharacteristics: twang, storytelling delivery, warm, nasal resonance,
+  harmonies, belt
+historicalContext: Folk Appalaches/western (1920s). Nashville Sound (50s-60s),
+  outlaw country (70s), new country (90s), pop-country (2000s+).
+sunoTags: country, acoustic, storytelling, americana, southern
+promptKeywords: acoustic guitar, storytelling, warm vocals, twang, heartfelt,
+  down-to-earth
+avoidKeywords: electronic beats, heavy bass, autotune, industrial, dubstep
+
+────────────────────────────────────────────────────────────────────────────────
+[8] id="classical" name="Classical"
+description: Tradition classique occidentale. Compositions orchestrales,
+  structure formelle, dynamiques expressives, richesse harmonique.
+subGenres: Baroque, Romantic, Contemporary Classical, Neoclassical, Minimalism,
+  Film Score, Chamber Music
+typicalBpm: 40-180
+typicalStructure: Exposition → Development → Recapitulation → Coda
+shortStructure: Exposition → Recapitulation → Coda
+radioStructure: Exposition → Development → Recapitulation
+longStructure: Exposition → Development → Recapitulation → Development
+  (variation) → Recapitulation → Coda
+keyInstruments: piano, violin, cello, orchestra, flute, french horn, timpani
+vocalCharacteristics: operatic, choral, soprano, tenor, vibrato, classical technique
+historicalContext: Tradition millénaire occidentale. Baroque (1600-1750),
+  classique (1750-1820), romantique (1820-1910), moderne/contemporain (1900+).
+sunoTags: classical, orchestral, symphonic, elegant, cinematic
+promptKeywords: orchestral, symphonic, majestic, dynamic range, rich harmony,
+  sweeping strings
+avoidKeywords: trap beat, autotune, EDM drop, electric guitar distortion, rap flow
+
+────────────────────────────────────────────────────────────────────────────────
+[9] id="metal" name="Metal"
+description: Genre extrême : guitares lourdement distordues, tempos agressifs,
+  riffs puissants, énergie brute.
+subGenres: Heavy Metal, Thrash Metal, Death Metal, Black Metal, Power Metal,
+  Metalcore, Progressive Metal, Doom Metal
+typicalBpm: 100-220
+typicalStructure: Intro → Verse → Chorus → Verse → Chorus → Solo → Break →
+  Chorus → Outro
+shortStructure: Verse → Chorus → Verse → Chorus → Outro
+radioStructure: Verse → Chorus → Verse → Chorus → Solo → Outro
+longStructure: Intro → Verse → Chorus → Verse → Chorus → Solo → Break →
+  Verse → Chorus → Chorus → Outro
+keyInstruments: distorted guitar, bass guitar, double bass drums, lead guitar
+vocalCharacteristics: screaming, growling, clean power vocals, guttural,
+  falsetto, aggressive
+historicalContext: Fin 60s (Black Sabbath, Led Zeppelin). NWOBHM (80s), thrash
+  (Metallica, Slayer), death/black metal (90s), metalcore/djent (2000s+).
+sunoTags: metal, heavy, aggressive, distorted, powerful
+promptKeywords: heavy riffs, distorted guitar, powerful drums, aggressive
+  energy, headbanging, intense
+avoidKeywords: gentle acoustic, smooth jazz, bossa nova, lo-fi chill, lullaby
+
+────────────────────────────────────────────────────────────────────────────────
+[10] id="folk" name="Folk"
+description: Genre acoustique ancré dans les traditions populaires.
+  Storytelling, instruments acoustiques, mélodies simples.
+subGenres: Indie Folk, Folk Rock, Traditional Folk, Contemporary Folk, Neofolk,
+  Celtic Folk, Anti-Folk
+typicalBpm: 70-130
+typicalStructure: Intro → Verse → Chorus → Verse → Chorus → Verse → Chorus → Outro
+shortStructure: Verse → Chorus → Verse → Chorus
+radioStructure: Verse → Chorus → Verse → Chorus → Verse → Outro
+longStructure: Intro → Verse → Chorus → Verse → Chorus → Bridge → Verse →
+  Chorus → Verse → Chorus → Outro
+keyInstruments: acoustic guitar, harmonica, mandolin, banjo, violin, upright bass
+vocalCharacteristics: warm, natural, storytelling, unprocessed, intimate, harmonies
+historicalContext: Tradition orale populaire. Revival folk 60s (Dylan, Baez).
+  Indie folk contemporain (Fleet Foxes, Bon Iver).
+sunoTags: folk, acoustic, organic, storytelling, intimate
+promptKeywords: acoustic, warm, storytelling, organic, fingerpicking, intimate vocals
+avoidKeywords: heavy bass, electronic beat, autotune, dubstep, industrial noise
+
+────────────────────────────────────────────────────────────────────────────────
+[11] id="reggae" name="Reggae"
+description: Genre jamaïcain au rythme off-beat distinctif, grooves relaxés,
+  thèmes de justice sociale, spiritualité et amour.
+subGenres: Roots Reggae, Dancehall, Dub, Ska, Rocksteady, Lovers Rock, Ragga
+typicalBpm: 60-90
+typicalStructure: Intro → Verse → Chorus → Verse → Chorus → Bridge → Chorus → Outro
+shortStructure: Verse → Chorus → Verse → Chorus
+radioStructure: Verse → Chorus → Verse → Chorus → Bridge → Outro
+longStructure: Intro → Verse → Chorus → Verse → Chorus → Bridge → Solo →
+  Verse → Chorus → Outro
+keyInstruments: rhythm guitar (skank), bass guitar, drums (one drop), organ, horns
+vocalCharacteristics: laid-back, melodic, chanting, toasting, call-and-response
+historicalContext: Jamaïque fin 60s, issu du ska et rocksteady. Bob Marley
+  popularisation mondiale. Influence dub, trip-hop, électronique.
+sunoTags: reggae, jamaican, off-beat, groove, tropical
+promptKeywords: off-beat rhythm, laid-back groove, tropical feel, one-drop beat,
+  warm bass, island vibes
+avoidKeywords: blast beat, distorted guitar, harsh screaming, speed metal, industrial
+
+────────────────────────────────────────────────────────────────────────────────
+[12] id="latin" name="Latin"
+description: Famille de genres d'Amérique latine et de la péninsule ibérique.
+  Rythmes syncopés, percussions complexes, énergie dansante.
+subGenres: Reggaeton, Salsa, Bachata, Bossa Nova, Cumbia, Latin Pop, Merengue,
+  Latin Trap
+typicalBpm: 80-130
+typicalStructure: Intro → Verse → Chorus → Verse → Chorus → Bridge → Chorus → Outro
+shortStructure: Verse → Chorus → Verse → Chorus
+radioStructure: Verse → Chorus → Verse → Chorus → Bridge → Outro
+longStructure: Intro → Verse → Chorus → Verse → Chorus → Bridge → Solo →
+  Verse → Chorus → Outro
+keyInstruments: congas, bongos, guitar, brass, piano, timbales, bass
+vocalCharacteristics: passionate, rhythmic, melodic, expressive, bilingual
+historicalContext: Traditions africaines/européennes/autochtones. Salsa
+  (60s-70s), bossa nova (60s), reggaeton (2000s), latin trap (2010s+).
+sunoTags: latin, tropical, danceable, rhythmic, passionate
+promptKeywords: latin rhythm, danceable, percussion-heavy, tropical, passionate
+  vocals, fiesta energy
+avoidKeywords: dark ambient, black metal, monotone, industrial noise, drone
+
+────────────────────────────────────────────────────────────────────────────────
+[13] id="blues" name="Blues"
+description: Genre fondateur de la musique moderne, structure 12 mesures,
+  expression émotionnelle brute, improvisation.
+subGenres: Delta Blues, Chicago Blues, Electric Blues, Blues Rock, Modern Blues,
+  Acoustic Blues
+typicalBpm: 60-120
+typicalStructure: Intro → Verse (12-bar) → Verse (12-bar) → Solo →
+  Verse (12-bar) → Outro
+shortStructure: Verse (12-bar) → Verse (12-bar) → Outro
+radioStructure: Verse (12-bar) → Verse (12-bar) → Solo → Outro
+longStructure: Intro → Verse (12-bar) → Verse (12-bar) → Solo → Verse (12-bar)
+  → Solo → Verse (12-bar) → Outro
+keyInstruments: electric guitar, harmonica, piano, bass, drums, slide guitar
+vocalCharacteristics: raw emotion, gritty, call-and-response, soulful, bending notes
+historicalContext: Deep South afro-américain fin XIXe. Delta blues (1920s-30s),
+  Chicago électrifié (40s-50s), blues rock (60s). Ancêtre rock/R&B/jazz.
+sunoTags: blues, soulful, raw, 12-bar, emotional
+promptKeywords: 12-bar blues, soulful, gritty vocals, guitar licks, emotional
+  depth, slide guitar
+avoidKeywords: EDM drop, autotune, synth pop, futuristic, hyperactive beat
+
+────────────────────────────────────────────────────────────────────────────────
+[14] id="funk" name="Funk"
+description: Genre groovy centré sur basse et batterie, rythmes syncopés,
+  énergie dansante. Le "one" (premier temps fort) est sacré.
+subGenres: P-Funk, Electro Funk, Acid Funk, Funk Rock, Go-Go, Boogie
+typicalBpm: 95-130
+typicalStructure: Intro → Verse → Chorus → Verse → Chorus → Break → Chorus → Outro
+shortStructure: Verse → Chorus → Verse → Chorus
+radioStructure: Verse → Chorus → Verse → Chorus → Break → Outro
+longStructure: Intro → Verse → Chorus → Verse → Chorus → Break → Solo → Verse
+  → Chorus → Outro
+keyInstruments: bass guitar (slap), drums, clavinet, rhythm guitar, horns, organ
+vocalCharacteristics: energetic, call-and-response, shouts, rhythmic, ad-libs,
+  falsetto
+historicalContext: James Brown, George Clinton (60s-70s). Groove et basse
+  centraux. Influence sur hip-hop, disco, électro.
+sunoTags: funk, groovy, bass-heavy, danceable, rhythmic
+promptKeywords: funky bass, groovy beat, syncopated, danceable, tight rhythm
+  section, slap bass
+avoidKeywords: soft ballad, ambient drone, classical strings, folk whisper, minimalist
+
+────────────────────────────────────────────────────────────────────────────────
+[15] id="soul" name="Soul"
+description: Genre vocal puissant combinant gospel, R&B et blues. Émotion,
+  voix, connexion humaine profonde.
+subGenres: Classic Soul, Northern Soul, Southern Soul, Neo-Soul, Psychedelic
+  Soul, Blue-Eyed Soul
+typicalBpm: 70-120
+typicalStructure: Intro → Verse → Chorus → Verse → Chorus → Bridge → Chorus → Outro
+shortStructure: Verse → Chorus → Verse → Chorus
+radioStructure: Verse → Chorus → Verse → Chorus → Bridge → Outro
+longStructure: Intro → Verse → Chorus → Verse → Chorus → Bridge → Solo →
+  Verse → Chorus → Outro
+keyInstruments: organ, piano, horns, bass, drums, strings, guitar
+vocalCharacteristics: powerful, gospel-influenced, emotional depth, melismatic,
+  raw passion
+historicalContext: Fusion gospel/R&B (1950s). Motown/Stax (60s), Philly soul
+  (70s). Aretha Franklin, Otis Redding, Marvin Gaye. Revival neo-soul (2000s).
+sunoTags: soul, soulful, gospel, emotional, warm
+promptKeywords: soulful vocals, gospel-influenced, emotional, warm production,
+  powerful delivery, horn section
+avoidKeywords: aggressive screaming, blast beats, cold electronic, noise, speed metal
+
+────────────────────────────────────────────────────────────────────────────────
+[16] id="indie" name="Indie"
+description: Mouvement esthétique d'indépendance créative, production lo-fi
+  ou artisanale, sonorités alternatives non-mainstream.
+subGenres: Indie Rock, Indie Pop, Indie Folk, Indie Electronic, Bedroom Pop,
+  Shoegaze, Math Rock
+typicalBpm: 90-140
+typicalStructure: Intro → Verse → Chorus → Verse → Chorus → Bridge → Outro
+shortStructure: Verse → Chorus → Verse → Chorus
+radioStructure: Verse → Chorus → Verse → Chorus → Bridge → Outro
+longStructure: Intro → Verse → Chorus → Verse → Chorus → Bridge → Solo →
+  Verse → Chorus → Outro
+keyInstruments: guitar, synth, bass, drums, keyboards, effects pedals
+vocalCharacteristics: understated, breathy, quirky, layered, reverb-drenched, intimate
+historicalContext: Labels indépendants 80s (post-punk, college rock). Mainstream
+  2000s (Strokes, Arctic Monkeys). Bedroom pop/micro-genres 2020s.
+sunoTags: indie, alternative, lo-fi, dreamy, artsy
+promptKeywords: indie vibes, dreamy, layered guitars, lo-fi charm, atmospheric, reverb
+avoidKeywords: overproduced, mainstream pop, radio formula, polished EDM, auto-tune heavy
+
+────────────────────────────────────────────────────────────────────────────────
+[17] id="punk" name="Punk"
+description: Genre brut et rapide, éthique DIY, structures simples 3 accords,
+  énergie rebelle. Anti-establishment par définition.
+subGenres: Pop Punk, Hardcore Punk, Post-Punk, Skate Punk, Anarcho-Punk, Emo,
+  Crust Punk
+typicalBpm: 140-220
+typicalStructure: Intro → Verse → Chorus → Verse → Chorus → Bridge → Chorus → Outro
+shortStructure: Verse → Chorus → Verse → Chorus
+radioStructure: Verse → Chorus → Verse → Chorus → Bridge → Outro
+longStructure: Intro → Verse → Chorus → Verse → Chorus → Bridge → Verse →
+  Chorus → Chorus → Outro
+keyInstruments: electric guitar (power chords), bass guitar, fast drums, vocals
+vocalCharacteristics: shouting, raw, nasal, energetic, gang vocals, anthemic
+historicalContext: NYC/Londres milieu 70s (Ramones, Sex Pistols, Clash). DIY,
+  fanzines, labels indé. Hardcore (80s), pop-punk (90s-2000s), post-punk (2020s).
+sunoTags: punk, raw, fast, rebellious, DIY
+promptKeywords: fast tempo, raw energy, power chords, rebellious, anthemic
+  chorus, DIY spirit
+avoidKeywords: smooth jazz, ambient, orchestral, delicate ballad, soft whisper
+
+────────────────────────────────────────────────────────────────────────────────
+[18] id="ambient" name="Ambient"
+description: Genre atmosphérique minimaliste : paysages sonores immersifs.
+  Peu ou pas de beat, textures évolutives, espace sonore.
+subGenres: Dark Ambient, Space Ambient, Drone, New Age, Ambient Electronica, Healing
+typicalBpm: 40-90
+typicalStructure: Opening → Evolution → Climax → Decay → Resolution
+shortStructure: Opening → Climax → Resolution
+radioStructure: Opening → Evolution → Climax → Resolution
+longStructure: Opening → Evolution → Climax → Decay → Evolution → Climax → Resolution
+keyInstruments: synthesizer, field recordings, reverb, delay, granular synth, piano
+vocalCharacteristics: ethereal, wordless, processed, whisper, minimal or absent
+historicalContext: Conceptualisé par Brian Eno 70s (Music for Airports).
+  Influence minimaliste (Reich, Glass). Revival lo-fi ambiant et healing 2020s.
+sunoTags: ambient, atmospheric, ethereal, minimal, spacious
+promptKeywords: atmospheric, textural, spacious, evolving soundscape, ethereal,
+  meditative
+avoidKeywords: heavy drums, aggressive vocals, punk energy, fast tempo, distorted guitar
+
+────────────────────────────────────────────────────────────────────────────────
+[19] id="kpop" name="K-Pop"
+description: Genre sud-coréen ultra-produit (pop, hip-hop, EDM, R&B). Changements
+  de sections multiples, chorégraphies intégrées, production maximale, hooks calibrés.
+subGenres: K-Pop Idol, K-R&B, K-Hip-Hop, K-Ballad, K-Rock, K-Indie, K-EDM, K-Trot
+typicalBpm: 100-140
+typicalStructure: Intro → Verse → Pre-Chorus → Chorus → Post-Chorus → Verse →
+  Pre-Chorus → Chorus → Bridge → Dance Break → Chorus → Outro
+shortStructure: Verse → Pre-Chorus → Chorus → Verse → Chorus
+radioStructure: Verse → Pre-Chorus → Chorus → Verse → Chorus → Bridge → Outro
+longStructure: Intro → Verse → Pre-Chorus → Chorus → Post-Chorus → Verse →
+  Pre-Chorus → Chorus → Bridge → Dance Break → Solo → Chorus → Outro
+keyInstruments: synth, 808 bass, drum machine, brass hits, electric guitar,
+  piano, sampler
+vocalCharacteristics: mixed rap and singing, high-pitched, harmonies, ad-libs,
+  chanting, falsetto, emotional belting
+historicalContext: Seo Taiji and Boys (1992). Systématisation labels (SM, YG,
+  JYP) avec trainee system. Hallyu mondiale 2010s. BTS, BLACKPINK 2020s.
+sunoTags: k-pop, korean pop, catchy, polished, high-energy
+promptKeywords: k-pop production, catchy hook, multi-section, high-energy,
+  polished vocals, dance beat, brass hits
+avoidKeywords: lo-fi, raw acoustic, folk whisper, ambient drone, garage rock
+
+────────────────────────────────────────────────────────────────────────────────
+[20] id="16bit" name="16-Bit"
+description: Inspiré des soundtracks 16-bit (SNES, Mega Drive). Chiptune évolué,
+  mélodies mémorables, sons synthétiques rétro, textures pixelisées.
+subGenres: Chiptune, Bitpop, Synthwave Retro, Video Game Music, Pixel Music,
+  FM Synthesis
+typicalBpm: 110-160
+typicalStructure: Intro → Theme A → Theme B → Bridge → Theme A (variation) → Outro
+shortStructure: Theme A → Theme B → Theme A (variation)
+radioStructure: Theme A → Theme B → Theme A (variation) → Outro
+longStructure: Intro → Theme A → Theme B → Bridge → Theme A (variation) →
+  Theme C → Theme B (variation) → Outro
+keyInstruments: square wave synth, triangle wave bass, noise channel drums,
+  FM synth, arpeggiator, sawtooth lead
+vocalCharacteristics: minimal or absent, vocoder, pitched chiptune vocals,
+  robotic, processed
+historicalContext: Puces 16-bit (1988-1996) : SPC700 (SNES), YM2612 (Mega Drive).
+  Koji Kondo, Nobuo Uematsu, Yuzo Koshiro. Revival chiptune 2000s-2010s.
+sunoTags: chiptune, 16-bit, retro gaming, pixel, 8-bit
+promptKeywords: chiptune, retro gaming, pixel soundtrack, 16-bit synth,
+  nostalgic, video game melody, upbeat electronic
+avoidKeywords: organic instruments, orchestral strings, acoustic guitar,
+  soulful vocals, jazz harmony
+
+────────────────────────────────────────────────────────────────────────────────
+[21] id="celtic" name="Celtic"
+description: Musique traditionnelle des nations celtiques (Irlande, Écosse,
+  Bretagne, Galles). Mélodies modales, ornementations rapides, danses (jigs, reels).
+subGenres: Irish Traditional, Scottish Folk, Celtic Rock, Celtic Fusion,
+  Breton Music, Celtic New Age, Celtic Punk
+typicalBpm: 80-160
+typicalStructure: Intro → Theme A → Theme A (repeat) → Theme B → Theme B
+  (repeat) → Bridge → Theme A (variation) → Outro
+shortStructure: Theme A → Theme B → Theme A (variation)
+radioStructure: Theme A → Theme B → Theme A (repeat) → Bridge → Outro
+longStructure: Intro → Theme A → Theme A (repeat) → Theme B → Theme B (repeat)
+  → Bridge → Solo → Theme A (variation) → Theme B (variation) → Outro
+keyInstruments: fiddle, tin whistle, uilleann pipes, bodhrán, acoustic guitar,
+  harp, accordion, mandolin
+vocalCharacteristics: sean-nós singing, unaccompanied melody, ornamented,
+  lilting, warm, storytelling
+historicalContext: Traditions orales celtiques millénaires. Renouveau folk
+  60s-70s (Chieftains, Planxty). Celtic rock 80s-90s (Pogues, Clannad). Fusion
+  contemporaine (Lúnasa, Afro Celt). Influence films fantastiques.
+sunoTags: celtic, irish, folk, traditional, gaelic
+promptKeywords: celtic melody, irish folk, fiddle, tin whistle, jig rhythm,
+  modal harmony, festive
+avoidKeywords: trap beat, autotune, heavy distortion, EDM drop, industrial noise
+
+────────────────────────────────────────────────────────────────────────────────
+[22] id="afroworld" name="Afro / World"
+description: Musiques africaines et diasporiques. Polyrythmies, percussions
+  complexes, grooves hypnotiques. Fusion traditions ancestrales et production moderne.
+subGenres: Afrobeats, Afro House, Afro-Funk, Highlife, Gnawa, Griot,
+  Cape Verdean, Afro-Fusion
+typicalBpm: 95-135
+typicalStructure: Intro → Verse → Chorus → Verse → Chorus → Break → Chorus → Outro
+shortStructure: Verse → Chorus → Verse → Chorus
+radioStructure: Verse → Chorus → Verse → Chorus → Break → Outro
+longStructure: Intro → Verse → Chorus → Verse → Chorus → Break → Solo →
+  Verse → Chorus → Outro
+keyInstruments: djembe, talking drum, shekere, kora, bass guitar, horns, guitar, synth
+vocalCharacteristics: call-and-response, melodic, chanting, multilingual,
+  rhythmic, joyful
+historicalContext: Traditions ouest-africaines (griots, percussions rituelles).
+  Highlife ghanéen (50s-60s), Afrobeat Fela Kuti (70s), jùjú. Explosion
+  Afrobeats nigérian (Burna Boy, Wizkid) 2010-2020s. Gnawa marocain.
+sunoTags: afrobeats, african, world music, tribal, groovy
+promptKeywords: afrobeats rhythm, polyrhythmic, african percussion,
+  call-and-response, tropical groove, world fusion, hypnotic
+avoidKeywords: cold electronic, heavy metal, screaming vocals, industrial, noise wall
+
+────────────────────────────────────────────────────────────────────────────────
+[23] id="disco" name="Disco / Dance"
+description: Genre de danse né dans les clubs 70s : four-on-the-floor, basses
+  groovy, cordes lush, énergie euphorique du dancefloor.
+subGenres: Classic Disco, Nu-Disco, Italo Disco, Garage, Dance Pop, Hi-NRG,
+  Eurodance, Boogie
+typicalBpm: 110-135
+typicalStructure: Intro → Verse → Chorus → Verse → Chorus → Break → Chorus → Outro
+shortStructure: Verse → Chorus → Verse → Chorus
+radioStructure: Verse → Chorus → Verse → Chorus → Break → Outro
+longStructure: Intro → Verse → Chorus → Verse → Chorus → Break → Solo →
+  Verse → Chorus → Outro
+keyInstruments: bass guitar, strings, rhythm guitar (wah-wah), drums
+  (four-on-the-floor), horns, synth, electric piano
+vocalCharacteristics: diva vocals, falsetto, harmonies, energetic,
+  call-and-response, anthemic
+historicalContext: Clubs underground NYC début 70s (Studio 54, Paradise
+  Garage). Bee Gees, Donna Summer, Chic. Déclin 80s mais héritage house/dance.
+  Revival nu-disco, Daft Punk (2000s-2010s).
+sunoTags: disco, dance, groovy, funky, club
+promptKeywords: four-on-the-floor, disco groove, dancefloor, funky bassline,
+  lush strings, club energy, euphoric
+avoidKeywords: dark ambient, heavy distortion, screaming, folk acoustic, lo-fi bedroom
+
+────────────────────────────────────────────────────────────────────────────────
+[24] id="middleeastern" name="Middle Eastern"
+description: Musiques du Moyen-Orient et d'Afrique du Nord. Gammes modales
+  (maqam), ornementations mélismatiques, percussions hypnotiques.
+subGenres: Arabic Pop, Khaleeji, Rai, Turkish Pop, Persian Classical, Gnawa,
+  Dabke, Arabic Trap
+typicalBpm: 80-140
+typicalStructure: Intro → Verse → Chorus → Verse → Chorus → Instrumental
+  Break → Chorus → Outro
+shortStructure: Verse → Chorus → Verse → Chorus
+radioStructure: Verse → Chorus → Verse → Chorus → Instrumental Break → Outro
+longStructure: Intro → Verse → Chorus → Verse → Chorus → Instrumental Break
+  → Verse → Chorus → Outro
+keyInstruments: oud, darbuka, qanun, ney, tabla, strings, synth
+vocalCharacteristics: melismatic, ornamented, passionate, modal, powerful
+  projection, quarter-tone
+historicalContext: Traditions millénaires basées sur maqam. Âge d'or musique
+  arabe (Oum Kalthoum, Fairouz). Raï algérien (80s-90s), Turkish pop, Arabic
+  pop. Fusion trap/electronic (2010s+).
+sunoTags: arabic, middle eastern, oriental, maqam, exotic
+promptKeywords: arabic scale, middle eastern melody, oud, darbuka rhythm,
+  oriental feel, maqam harmony, exotic
+avoidKeywords: country twang, punk power chords, bluegrass banjo, death metal, chiptune
+
+────────────────────────────────────────────────────────────────────────────────
+[25] id="indian" name="Indian"
+description: Musiques du sous-continent indien. Traditions hindustani/carnatique
+  et Bollywood moderne. Ragas mélodiques, tablas rythmiques, voix expressives.
+subGenres: Bollywood, Hindustani Classical, Carnatic, Bhangra, Indian Pop,
+  Qawwali, Indian Electronic, Filmi
+typicalBpm: 70-150
+typicalStructure: Alap (Intro) → Verse → Chorus → Verse → Chorus →
+  Instrumental Break → Chorus → Outro
+shortStructure: Verse → Chorus → Verse → Chorus
+radioStructure: Verse → Chorus → Verse → Chorus → Instrumental Break → Outro
+longStructure: Alap (Intro) → Verse → Chorus → Verse → Chorus → Instrumental
+  Break → Verse → Chorus → Outro
+keyInstruments: sitar, tabla, harmonium, tanpura, sarangi, flute (bansuri), dhol
+vocalCharacteristics: melismatic, ornamented ragas, expressive, powerful,
+  devotional, playback style
+historicalContext: Tradition millénaire (ragas, talas). Hindustani (nord),
+  carnatique (sud). Bollywood domine depuis 1930. Bhangra crossover (90s-2000s),
+  Indian electronic fusion (2010s+).
+sunoTags: indian, bollywood, hindi, raga, ethnic
+promptKeywords: indian melody, sitar, tabla rhythm, bollywood feel, raga scale,
+  hindi vocals, cinematic indian
+avoidKeywords: heavy metal, punk aggression, country twang, cold electronic, lo-fi bedroom
+
+────────────────────────────────────────────────────────────────────────────────
+[26] id="japanese" name="Japanese"
+description: Musiques japonaises : traditions ancestrales (koto, shakuhachi) et
+  styles modernes (J-Pop, city pop, anime OST). Mélodies pentatoniques, raffinées.
+subGenres: J-Pop, City Pop, Anime OST, Enka, Traditional Japanese, Visual Kei,
+  J-Rock, Shibuya-kei
+typicalBpm: 85-145
+typicalStructure: Intro → Verse → Pre-Chorus → Chorus → Verse → Pre-Chorus →
+  Chorus → Bridge → Chorus → Outro
+shortStructure: Verse → Chorus → Verse → Chorus → Outro
+radioStructure: Verse → Pre-Chorus → Chorus → Verse → Chorus → Bridge → Outro
+longStructure: Intro → Verse → Pre-Chorus → Chorus → Verse → Pre-Chorus →
+  Chorus → Bridge → Solo → Chorus → Chorus → Outro
+keyInstruments: koto, shakuhachi, shamisen, synth, electric guitar, piano, taiko
+vocalCharacteristics: clear, emotive, high-pitched, melodic, anime-style, expressive
+historicalContext: Traditions séculaires (gagaku, min'yō). Enka (60s-70s),
+  city pop (80s), J-Pop/J-Rock mainstream (90s-2000s). Anime OST mondial.
+  Revival city pop viral 2020s.
+sunoTags: japanese, j-pop, anime, koto, oriental
+promptKeywords: japanese melody, koto, pentatonic scale, anime style, city pop
+  groove, j-pop production, elegant
+avoidKeywords: heavy distortion, trap 808, country fiddle, reggaeton, gospel choir
+
+--------------------------------------------------------------------------------
+SECTION 5.2 — MOODS (11 entrées)
+--------------------------------------------------------------------------------
+
+Schéma : id | name | description | lexicalFields | musicalCharacteristics |
+         compatibleGenres | promptModifiers
+
+────────────────────────────────────────────────────────────────────────────────
+[1] id="joyful" name="Joyful"
+description: Atmosphère lumineuse et euphorique. Énergie positive, mélodies
+  ascendantes, rythmes entraînants.
+lexicalFields: sunshine, laughter, freedom, dance, celebration, alive, golden,
+  flying, smile, light
+musicalCharacteristics: major key, bright tempo (110-130 BPM), staccato rhythms,
+  uplifting chord progressions, high register melodies
+compatibleGenres: pop, funk, reggae, latin, country, indie
+promptModifiers: upbeat, feel-good, sunny, euphoric, celebratory
+
+[2] id="melancholic" name="Melancholic"
+description: Tristesse subtile et beauté dans la douleur. Tonalités mineures,
+  tempos lents, introspection.
+lexicalFields: rain, memories, fading, shadows, silence, distance, longing,
+  ghost, cold, lost
+musicalCharacteristics: minor key, slow to mid tempo (60-90 BPM), sustained
+  notes, descending melodies, sparse arrangement
+compatibleGenres: indie, folk, blues, soul, classical, ambient, rnb
+promptModifiers: bittersweet, wistful, introspective, somber, tearful
+
+[3] id="energetic" name="Energetic"
+description: Énergie explosive, adrénaline pure. Rythmes rapides, dynamiques
+  fortes, intensité maximale.
+lexicalFields: fire, rush, power, unstoppable, wild, explode, lightning,
+  adrenaline, roar, blaze
+musicalCharacteristics: fast tempo (130-180 BPM), driving beat, loud dynamics,
+  distortion, powerful drops
+compatibleGenres: rock, electronic, metal, punk, hiphop, funk
+promptModifiers: high-energy, explosive, pumping, intense, adrenaline-fueled
+
+[4] id="calm" name="Calm"
+description: Sérénité et paix intérieure. Tempos lents, sons doux, textures
+  apaisantes.
+lexicalFields: breeze, ocean, stillness, peace, gentle, moonlight, floating,
+  serene, whisper, horizon
+musicalCharacteristics: slow tempo (60-80 BPM), soft dynamics, legato phrasing,
+  wide reverb, minimal percussion
+compatibleGenres: ambient, folk, jazz, classical, indie, rnb
+promptModifiers: peaceful, serene, soothing, tranquil, gentle
+
+[5] id="aggressive" name="Aggressive"
+description: Colère et puissance brute. Distorsion, cris, rythmes martelés
+  pour un impact viscéral.
+lexicalFields: rage, war, destruction, chaos, blood, fury, storm, smash,
+  scream, battle
+musicalCharacteristics: heavy distortion, fast or pounding tempo, aggressive
+  vocals, dissonance, breakdowns
+compatibleGenres: metal, punk, hiphop, rock, electronic
+promptModifiers: brutal, fierce, ruthless, hard-hitting, unrelenting
+
+[6] id="romantic" name="Romantic"
+description: Amour, passion et intimité. Mélodies chaleureuses, voix
+  sensuelles, arrangements enveloppants.
+lexicalFields: heart, kiss, forever, desire, touch, flame, devotion,
+  starlight, breathless, together
+musicalCharacteristics: mid tempo (80-110 BPM), warm tones, lush harmonies,
+  strings, intimate vocal delivery
+compatibleGenres: rnb, soul, pop, jazz, latin, country, folk
+promptModifiers: sensual, passionate, intimate, warm, heartfelt
+
+[7] id="dark" name="Dark"
+description: Atmosphère sombre et inquiétante. Tonalités mineures profondes,
+  textures lourdes, ambiance oppressante.
+lexicalFields: shadow, void, obsidian, abyss, midnight, haunt, decay,
+  phantom, ashes, dread
+musicalCharacteristics: minor/diminished chords, slow to mid tempo, low
+  register, sparse and heavy, dissonant textures
+compatibleGenres: metal, electronic, ambient, hiphop, indie, classical
+promptModifiers: ominous, haunting, sinister, brooding, gothic
+
+[8] id="uplifting" name="Uplifting"
+description: Inspiration et espoir. Progressions ascendantes, crescendos
+  émotionnels, énergie positive constructive.
+lexicalFields: rise, hope, wings, sky, believe, strength, tomorrow,
+  overcome, shine, soar
+musicalCharacteristics: major key, building dynamics, crescendos, anthemic
+  chords, layered instrumentation
+compatibleGenres: pop, rock, electronic, country, soul, indie
+promptModifiers: inspirational, anthemic, soaring, triumphant, hopeful
+
+[9] id="nostalgic" name="Nostalgic"
+description: Retour dans le passé, souvenirs doux-amers. Sonorités vintage,
+  mélodies familières, textures chaudes.
+lexicalFields: memories, youth, hometown, summer, photograph, yesterday,
+  faded, golden days, rewind, bittersweet
+musicalCharacteristics: warm tones, vinyl texture, mid tempo, analog sounds,
+  reverb, retro production
+compatibleGenres: indie, pop, folk, soul, rnb, country, blues
+promptModifiers: retro, vintage, wistful, throwback, dreamy nostalgia
+
+[10] id="epic" name="Epic"
+description: Grandeur cinématique, émotions titanesques. Orchestrations
+  massives, crescendos puissants, sensation de saga.
+lexicalFields: legend, kingdom, destiny, conquer, glory, eternal, titan,
+  horizon, dawn, warrior
+musicalCharacteristics: wide dynamic range, orchestral layers, choir,
+  timpani rolls, sweeping melodies, build to climax
+compatibleGenres: classical, metal, electronic, rock, ambient
+promptModifiers: cinematic, majestic, grandiose, monumental, sweeping
+
+[11] id="chaos" name="Chaos"
+description: Créativité débridée et imprévisibilité totale. Structures
+  éclatées, sons inattendus, fusions impossibles, résultats surprenants.
+lexicalFields: glitch, fracture, warp, entropy, distortion, spiral,
+  collision, static, flux, mutation
+musicalCharacteristics: unpredictable tempo shifts, dissonant harmonies,
+  genre-bending transitions, unexpected sound design, broken structure,
+  experimental layering
+compatibleGenres: electronic, metal, hiphop, ambient, punk, indie, jazz, rock
+promptModifiers: chaotic, experimental, glitchy, avant-garde, unpredictable
+
+--------------------------------------------------------------------------------
+SECTION 5.3 — WRITING STYLES (6 entrées)
+--------------------------------------------------------------------------------
+
+Schéma : id | name | description | rules | examples | sunoFormatting
+
+────────────────────────────────────────────────────────────────────────────────
+[1] id="poetic" name="Poetic"
+description: Écriture riche en métaphores, images, symbolisme. Chaque mot
+  pesé pour son poids émotionnel et sa musicalité.
+rules:
+  - Privilégier les métaphores et la symbolique plutôt que le littéral
+  - Utiliser des images sensorielles (vue, toucher, odorat, son)
+  - Varier les longueurs de vers pour créer du rythme
+  - Employer des rimes internes et des assonances
+  - Préférer l'évocation à l'explication directe
+  - Limiter le vocabulaire courant, chercher la beauté des mots
+examples:
+  - "Silk curtains of rain / Painting the windows blind"
+  - "We were constellations / Burning across each other's sky"
+  - "Time folds like origami / Each crease a year undone"
+sunoFormatting:
+  - Garder des vers courts (5-8 mots) pour le phrasé vocal
+  - Utiliser des pauses naturelles via des retours à la ligne
+  - Les refrains peuvent être plus simples pour contraster avec les couplets
+  - Placer les images les plus fortes en début/fin de section
+
+[2] id="storytelling" name="Storytelling"
+description: Narration linéaire avec personnages, décor, arc dramatique.
+  La chanson raconte une histoire du début à la fin.
+rules:
+  - Établir un cadre (qui, où, quand) dès le premier couplet
+  - Faire progresser l'histoire à chaque section
+  - Utiliser des détails concrets pour ancrer le récit
+  - Le refrain résume le thème émotionnel central
+  - Le bridge apporte un retournement ou une révélation
+  - Conclure avec une résolution ou une question ouverte
+examples:
+  - "She packed her bags on a Tuesday night / Left a note by the bedroom light"
+  - "The old man sat on the porch at dawn / Watching the world he built move on"
+  - "They met at a crossroads, summer of '99 / Two strangers trading stories over cheap red wine"
+sunoFormatting:
+  - Structurer en Verse 1 (setup) → Verse 2 (development) → Verse 3 (resolution)
+  - Le refrain doit être intemporel, applicable à chaque étape de l'histoire
+  - Utiliser [Bridge] pour le climax narratif ou le twist
+  - Garder un fil chronologique clair entre les sections
+
+[3] id="direct" name="Direct"
+description: Écriture franche et sans détour. Messages clairs, langage
+  courant, impact immédiat. Idéal pour les hymnes et le hip-hop.
+rules:
+  - Aller droit au but, pas de fioritures inutiles
+  - Utiliser un langage conversationnel et accessible
+  - Répéter les phrases-clés pour l'impact
+  - Les hooks doivent être mémorisables en une écoute
+  - Créer des punchlines percutantes
+  - Privilégier les mots d'une à deux syllabes pour le punch
+examples:
+  - "I don't need your love, I need my freedom"
+  - "We run this town, no one can stop us now"
+  - "Say what you mean, mean what you say"
+sunoFormatting:
+  - Refrains courts et répétitifs pour l'accroche immédiate
+  - Utiliser [Hook] au lieu de [Chorus] pour les morceaux hip-hop/trap
+  - Les ad-libs entre parenthèses renforcent l'énergie : (yeah!) (let's go!)
+  - Phrases courtes et percutantes, 4-6 mots par ligne
+
+[4] id="abstract" name="Abstract"
+description: Écriture expérimentale et non-linéaire. Fragments d'images,
+  associations libres, ambiguïté volontaire.
+rules:
+  - Jouer sur le sonore autant que le sémantique
+  - Juxtaposer des images sans connexion logique
+  - Éviter les narrations linéaires
+  - Laisser l'interprétation ouverte au listener
+  - Utiliser la répétition comme motif hypnotique
+  - Mélanger registres de langage et références inattendues
+examples:
+  - "Velvet static, chrome cathedral / Dissolving into pixel rain"
+  - "Seven moons in a cardboard sky / The clock forgot how to try"
+  - "Glass bones singing electricity / Your name tastes like Tuesday"
+sunoFormatting:
+  - Structure libre : les sections peuvent être inégales
+  - Utiliser [Break] et [Instrumental] pour créer des espaces
+  - Le refrain peut évoluer légèrement à chaque répétition
+  - Placer des indications vocales : (whisper), (echo), (spoken)
+
+[5] id="conversational" name="Conversational"
+description: Écriture qui sonne comme une conversation intime. Ton naturel,
+  adresse directe, authenticité.
+rules:
+  - Écrire comme on parle, avec contractions et familiarité
+  - S'adresser directement au listener ou à un 'tu/you'
+  - Inclure des hésitations et imperfections volontaires
+  - Les rimes ne sont pas obligatoires, le naturel prime
+  - Poser des questions rhétoriques
+  - Varier entre déclaration et introspection
+examples:
+  - "You know that feeling when the whole world stops? / Yeah, that's what you do to me"
+  - "I keep telling myself it's fine / But honestly? I don't think it is"
+  - "So here we are again / Same old kitchen, same old rain"
+sunoFormatting:
+  - Alterner entre vers chantés et passages quasi-parlés
+  - Utiliser (spoken) pour les passages les plus intimes
+  - Le refrain peut être une question récurrente
+  - Garder un ton naturel, éviter les mots trop 'songwriting'
+
+[6] id="anthem" name="Anthem"
+description: Écriture fédératrice pensée pour être criée en chœur. Thèmes
+  universels, refrains puissants, énergie collective.
+rules:
+  - Thèmes universels : liberté, unité, résilience, victoire
+  - Refrains simples, mémorisables et chantables en groupe
+  - Utiliser 'we/nous' plutôt que 'I/je' pour l'inclusion
+  - Crescendo émotionnel du couplet vers le refrain
+  - Répétition stratégique des lignes-clés
+  - Le bridge doit être le moment fort (breakdown → explosion)
+examples:
+  - "We are the ones who never break / Standing tall when the ground shakes"
+  - "Light it up, light it up / Every voice, every heart, rising up"
+  - "This is our time, this is our fight / We won't go gently into the night"
+sunoFormatting:
+  - Utiliser [Pre-Chorus] pour builder la tension
+  - Le [Chorus] doit pouvoir fonctionner a cappella
+  - Ajouter (choir) ou (gang vocals) pour les refrains
+  - [Post-Chorus] parfait pour la phrase-clé répétée : 'Oh-oh-oh' patterns
+
+--------------------------------------------------------------------------------
+SECTION 5.4 — ATMOSPHÈRES CULTURELLES (12 entrées)
+--------------------------------------------------------------------------------
+
+Schéma : id | name | emoji | description | scales | keyInstruments |
+         characteristics | promptKeywords | avoidKeywords
+
+────────────────────────────────────────────────────────────────────────────────
+[1] arabic — Arabique / Moyen-Orient 🏜️
+  Gammes modales (maqam) avec quarts de ton, percussions hypnotiques,
+  mélodies ornementées. Mystique, désertique ou sensuelle.
+  scales: maqam hijaz, maqam bayati, phrygian dominant, double harmonic
+    scale, quarter-tone intervals
+  keyInstruments: oud, qanun, ney, darbuka, riq, strings
+  characteristics: mystical, desert atmosphere, sensual, epic, ornamental
+    melodies, hypnotic rhythms
+  promptKeywords: arabic scale, oriental feel, oud, middle eastern, desert
+    vibes, quarter-tone, mystical atmosphere
+  avoidKeywords: western pop production, country twang, bluegrass
+
+[2] asian — Asiatique 🏯
+  Asie de l'Est : pentatoniques, instruments traditionnels, atmosphère
+  contemplative, zen ou dramatique (cinéma asiatique).
+  scales: pentatonic major, pentatonic minor, japanese in scale, hirajoshi
+    scale, chinese pentatonic
+  keyInstruments: koto, erhu, shamisen, bamboo flute, guzheng, taiko
+  characteristics: zen, contemplative, minimalist, dramatic, elegant,
+    cinematic asian
+  promptKeywords: asian pentatonic, koto, zen atmosphere, oriental elegance,
+    bamboo flute, cinematic asian, contemplative
+  avoidKeywords: heavy metal distortion, country fiddle, reggaeton beat
+
+[3] african — Africaine 🌍
+  Rythmes polyrythmiques, percussions organiques, énergie tribale. Festive,
+  rituelle ou contemplative.
+  scales: pentatonic, blues scale, hexatonic, modal patterns
+  keyInstruments: djembe, balafon, kora, talking drum, shekere, mbira
+  characteristics: tribal, polyrhythmic, energetic, organic, festive, ritualistic
+  promptKeywords: african percussion, tribal rhythm, polyrhythmic, djembe,
+    kora, organic groove, call-and-response
+  avoidKeywords: cold electronic, industrial noise, classical orchestral
+
+[4] latin — Latine 🌴
+  Rythmes dansants, percussions chaudes, énergie festive. Salsa, reggaeton,
+  bossa nova ou cumbia.
+  scales: major, harmonic minor, mixolydian, dorian
+  keyInstruments: congas, bongos, timbales, brass section, acoustic guitar, tres
+  characteristics: festive, warm, sensual, danceable, passionate, tropical
+  promptKeywords: latin rhythm, tropical feel, congas, danceable, warm
+    percussion, fiesta energy, sensual groove
+  avoidKeywords: dark ambient, black metal, cold minimalist
+
+[5] western — Occidentale moderne 🎶
+  Harmonie tonale classique. Pop, rock, hip-hop, EDM — son mainstream
+  international.
+  scales: major, minor, mixolydian, dorian, blues scale
+  keyInstruments: electric guitar, synth, drums, bass, piano, 808
+  characteristics: modern production, polished, commercial, energetic,
+    emotional, radio-ready
+  promptKeywords: modern production, western harmony, polished mix,
+    radio-ready, contemporary, mainstream sound
+  avoidKeywords: traditional folk instruments, quarter-tone, tribal percussion
+
+[6] european — Européenne classique / folk 🏰
+  Du classique élégant au folklorique traditionnel. Violon, piano, accordéon,
+  cornemuse. Nostalgique, raffinée ou champêtre.
+  scales: major, minor, modal (dorian, mixolydian), chromatic
+  keyInstruments: violin, piano, accordion, bagpipes, cello, flute
+  characteristics: elegant, nostalgic, traditional, romantic, pastoral, refined
+  promptKeywords: european classical, elegant strings, accordion, nostalgic,
+    pastoral atmosphere, romantic, refined production
+  avoidKeywords: trap beat, 808 bass, autotune
+
+[7] indian — Indienne 🕌
+  Système des ragas. Sitar, tabla, ornements mélismatiques. Spirituelle,
+  hypnotique, riche en couleurs.
+  scales: raga bhairavi, raga yaman, raga kafi, microtonal ornaments,
+    melodic modes
+  keyInstruments: sitar, tabla, tanpura, harmonium, bansuri, sarangi
+  characteristics: spiritual, hypnotic, ornamental, meditative, devotional,
+    rich textures
+  promptKeywords: indian raga, sitar, tabla rhythm, spiritual atmosphere,
+    hypnotic drone, ornamental melody, meditative
+  avoidKeywords: punk power chords, heavy metal, country twang
+
+[8] hybrid — Hybride / Cinématique 🌐
+  Fusion moderne de textures culturelles multiples. Mélanges cross-culturels
+  stylisés pour cinéma, jeux vidéo, pub, streaming contemporain.
+  scales: mixed modal, pentatonic fusion, chromatic tension, world fusion scales
+  keyInstruments: synth, ethnic percussion, strings, world flutes, electronic
+    beats, sampled textures
+  characteristics: cinematic, contemporary fusion, stylized, atmospheric,
+    immersive, cross-cultural
+  promptKeywords: cinematic fusion, world music blend, cross-cultural,
+    atmospheric production, hybrid orchestral, ethnic electronic, immersive soundscape
+  avoidKeywords: generic pop, conventional structure, single-genre purist
+
+[9] nordic — Nordique ❄️
+  Paysages sonores vastes et glacés. Mélodies mélancoliques, textures
+  éthérées, chœurs puissants, atmosphère majestueuse et intimiste,
+  entre aurores boréales et fjords.
+  scales: dorian, aeolian, natural minor, lydian, pentatonic minor
+  keyInstruments: nyckelharpa, hardingfele, kantele, strings, choir, synth pad
+  characteristics: vast, icy, melancholic, ethereal, majestic, minimalist beauty
+  promptKeywords: nordic atmosphere, scandinavian, vast soundscape, icy
+    textures, ethereal choir, melancholic beauty, aurora borealis
+  avoidKeywords: tropical feel, latin percussion, reggaeton beat
+
+[10] russian — Russe 🐻
+  Mélodies profondes et émotionnelles, harmonies en mineur, chœurs graves
+  et puissants. Mélancolie slave et grandeur orchestrale, du folk au romantisme épique.
+  scales: harmonic minor, natural minor, phrygian, dorian, diminished scale
+  keyInstruments: balalaika, bayan (accordion), domra, choir (basso profundo),
+    strings, piano
+  characteristics: deep emotion, grandiose, melancholic, powerful choir,
+    dramatic, soulful
+  promptKeywords: russian folk, balalaika, deep choir, slavic melancholy,
+    dramatic minor key, grandiose orchestral, basso profundo
+  avoidKeywords: tropical beats, autotune, happy pop
+
+[11] slavic — Slave 🌾
+  Europe de l'Est (Pologne, Ukraine, Balkans, Tchéquie…). Mélodies modales
+  ornementées, polyphonies vocales, rythmes asymétriques, couleur terrienne.
+  scales: phrygian dominant, harmonic minor, mixolydian, asymmetric meters
+    (7/8, 11/8), modal patterns
+  keyInstruments: accordion, violin (fiddle), tambura, kaval, gadulka, cimbalom
+  characteristics: earthy, festive, modal, polyphonic vocals, asymmetric
+    rhythms, passionate
+  promptKeywords: slavic folk, eastern european, balkan rhythm, polyphonic
+    vocals, asymmetric meter, earthy atmosphere, accordion melody
+  avoidKeywords: EDM drop, trap 808, western pop polish
+
+[12] futuristic — Futuriste 🚀
+  Science-fiction et cyberpunk. Textures synthétiques, sons glitchés, basses
+  profondes, atmosphères spatiales ou dystopiques.
+  scales: whole tone scale, chromatic passages, lydian, octatonic scale,
+    microtonal intervals
+  keyInstruments: synthesizer, vocoder, drum machine, granular synth, sub bass,
+    glitch effects
+  characteristics: cyberpunk, spatial, dystopian, glitchy, synthetic,
+    ethereal technology
+  promptKeywords: futuristic, cyberpunk, sci-fi soundtrack, synthesizer,
+    vocoder, glitch, space atmosphere, dystopian vibes
+  avoidKeywords: acoustic folk, country twang, traditional instruments only
+
+--------------------------------------------------------------------------------
+SECTION 5.5 — TAGS SUNO (référence complète)
+--------------------------------------------------------------------------------
+
+STRUCTURE TAGS:
+  [Intro]        — Introduction instrumentale ou vocale avant le 1er couplet.
+                   Placer en tout début. Peut contenir (instrumental) ou quelques mots.
+  [Verse]        — Couplet principal. Numéroter si plusieurs : [Verse 1], [Verse 2].
+                   Contenu différent à chaque fois.
+  [Pre-Chorus]   — Transition montante entre couplet et refrain (anticipation).
+                   2-4 lignes max, montée d'intensité.
+  [Chorus]       — Refrain — cœur mélodique. Répété 2-3 fois, doit être
+                   mémorable et chantable. Garder identique ou quasi-identique.
+  [Post-Chorus]  — Extension du refrain (souvent 'oh-oh' ou phrase-clé répétée).
+                   1-2 lignes. Renforce le hook.
+  [Bridge]       — Pont musical, contraste avec le reste. Une seule fois,
+                   généralement avant le dernier refrain. Changement mélodie/tonalité.
+  [Outro]        — Conclusion. Fade-out ou résolution. Peut reprendre des
+                   éléments du refrain ou de l'intro.
+  [Hook]         — Accroche mélodique courte et percutante. Alternative au
+                   Chorus en hip-hop. Plus court qu'un refrain.
+  [Break]        — Pause ou rupture rythmique. Silence ou changement drastique
+                   de dynamique.
+  [Fade Out]     — Diminution progressive du volume en fin de chanson.
+                   Dernière section.
+  [Drop]         — Climax rythmique (musique électronique). Après build-up,
+                   section instrumentale à haute énergie.
+  [end]          — Force la fin immédiate. Indispensable avec Extend pour
+                   empêcher Suno de continuer. Placer après [Outro].
+
+INSTRUMENTAL TAGS:
+  [Instrumental] — Section purement instrumentale (solo, interlude). Ajouter
+                   (instrumental) comme contenu. Suno génère sans voix.
+  [Solo]         — Solo instrumental. Préciser l'instrument : [Guitar Solo],
+                   [Sax Solo].
+  [Interlude]    — Passage instrumental de transition. Plus court qu'un
+                   [Instrumental]. Respiration.
+
+DELIVERY TAGS (inline, entre parenthèses) :
+  (instrumental) — Indique l'absence de paroles dans la section.
+  (whisper)      — Chuchotement vocal. Autour des lignes chuchotées.
+  (shout)        — Cri ou voix forte. Moments d'intensité maximale.
+  (spoken)       — Passage parlé plutôt que chanté. Intros parlées,
+                   interludes narratifs, spoken word.
+  (echo)         — Effet d'écho. Après la ligne concernée.
+  (choir)        — Section chantée en chœur. Refrains communautaires,
+                   harmonies de groupe.
+  (ad-lib)       — Improvisation vocale : 'yeah!', 'uh!', 'let's go!'.
+
+METATAGS (expérimentaux, agissent comme didascalies) :
+  [laughter]              — Génère un rire naturel.
+  [piano interlude]       — Interlude piano (fonctionne aussi avec
+                            [guitar interlude], [violin interlude], etc.).
+  [fast rap verse]        — Couplet rap rapide.
+  [slow emotional bridge] — Pont lent et émotionnel.
+
+NON-LEXICAL VOCABLES (sons chantés sans signification) :
+  oh-oh-oh    — Refrains, post-chorus
+  la la la    — Outros, interludes légers
+  na na na    — Hooks pop/rock
+  do do do    — Intros joyeuses
+  ooh / aah   — Harmonies, transitions
+  hey! / ho!  — Anthems, énergie collective
+  mm-mmm      — Sections intimes
+  yeah! / uh! — Ad-libs hip-hop
+
+--------------------------------------------------------------------------------
+SECTION 5.6 — LANGUES (codes ISO supportés)
+--------------------------------------------------------------------------------
+
+  en  → English          fr → French           es → Spanish
+  pt  → Portuguese       ja → Japanese         ko → Korean
+  de  → German           it → Italian          ru → Russian
+  hi  → Hindi            ar → Arabic           zh → Chinese
+  qya → Elvish (Quenya)  — phonologie inspirée du finnois (Tolkien).
+                            Voyelles douces (a, e, i, o, u), liquides
+                            (l, r, n, m), diphtongues. Éviter consonnes dures.
+
+Règle stricte : les champs positivePrompt et negativePrompt destinés à Suno
+DOIVENT toujours être en anglais, indépendamment de la langue des lyrics.
+
+--------------------------------------------------------------------------------
+SECTION 5.7 — RÈGLES DE THÉORIE MUSICALE (26 entrées)
+--------------------------------------------------------------------------------
+
+Format : [category] title — description | applicableGenres
+
+STRUCTURE
+[structure] Structure standard de chanson — La plus courante : Intro → Verse
+  → Chorus → Verse → Chorus → Bridge → Chorus → Outro. Adapter par genre
+  (hip-hop : Hook au lieu de Chorus ; jazz : Head-Solo-Head). | all
+[structure] Longueur des sections — Couplets 4-8 lignes ; refrains 4-6 ;
+  Pre-Chorus 2-4 ; Bridge 4-6. Sections trop longues = impact dilué. | all
+[structure] Durée cible Suno — Morceaux 2-4 min, viser 200-300 mots de
+  lyrics. Au-delà : tronqué ou bâclé. | all
+[structure] Équilibre répétition vs variété — Refrain quasi-identique
+  (reconnaissance), couplets variés (progression). | all
+
+HARMONY
+[harmony] Tonalités majeures = émotions positives — C, G, D, A, E pour
+  joyful/uplifting/energetic. | all
+[harmony] Tonalités mineures = émotions sombres — Am, Em, Dm, Bm pour
+  melancholic/dark/aggressive. | all
+[harmony] Progressions d'accords courantes — Pop/Rock : I-V-vi-IV. Blues :
+  I-I-I-I-IV-IV-I-I-V-IV-I-V (12 mesures). Jazz : ii-V-I. Triste : vi-IV-I-V.
+  Épique : I-III-IV-iv. | all
+
+RHYTHM
+[rhythm] Tempo et densité de syllabes — Lent (60-80) : peu de syllabes, mots
+  longs. Rapide (140+) : syllabes courtes, flow rapide, mots percussifs. | all
+[rhythm] Straight vs Swing feel — Straight (rock, pop, electronic) : croches
+  égales. Swing (jazz, blues, soul) : croches inégales (longue-courte).
+  Préciser dans le prompt. | all
+
+LYRICS
+[lyrics] Montrer plutôt que dire — Préférer "Rain taps the window where you
+  used to sit" à "I'm sad". Images concrètes > déclarations abstraites. | all
+[lyrics] Schémas de rimes — AABB (couplets rimés), ABAB (croisées), ABCB
+  (seules lignes 2 et 4 riment). Rimes internes et near-rhymes apportent
+  de la texture sans forcer. | all
+[lyrics] Le hook en premier — Écrire le refrain/hook d'abord, construire
+  les couplets autour. | all
+[lyrics] Chantabilité des mots — Voyelles ouvertes (ah, oh, ee) sur notes
+  tenues. Éviter consonnes clusters (strengths, twelfths) en fin de phrase. | all
+[lyrics] Nombre de mots cible — Viser 200-300 mots. Au-delà : Suno tronque
+  ou bâcle. | all
+
+PRODUCTION
+[production] Spécificité du prompt Suno — Combiner : genre + adjectifs mood
+  + instruments clés + BPM + voix. Ex : 'Indie rock, dreamy, jangly guitars,
+  soft male vocals, 120 BPM'. | all
+[production] Usage du prompt négatif — Court (3-5 éléments max). Exclure
+  uniquement ce qui pourrait apparaître par défaut. Ex : 'no autotune,
+  no heavy bass, no screaming'. | all
+[production] Mélange de genres — Suno gère bien 2-3 genres. Préciser genre
+  principal + sous-genre ou influence. Ex : 'Jazz-hop, lo-fi hip-hop with
+  smooth jazz elements'. Au-delà de 3 : imprévisible. | all
+[production] Longueur max du positive prompt — ~200 caractères max. Au-delà :
+  interprétation diluée, cohérence perdue. | all
+[production] Longueur max du negative prompt — ~120 caractères, 3-5 éléments
+  max, chacun préfixé par 'no'. | all
+[production] Prompts en anglais obligatoire — positivePrompt et
+  negativePrompt TOUJOURS en anglais, même si lyrics dans une autre langue.
+  Anglais = résultats les plus fiables. | all
+[production] Ordre des mots dans le prompt — Premiers mots du positivePrompt
+  ont plus de poids. Genre en premier, puis descripteurs importants. | all
+
+GENRE-SPECIFIC
+[genre-specific] Structure en mesures (bars) du hip-hop — Couplets 16 bars,
+  hook 4-8 bars, 1 mesure = 1 ligne. Flow constant, rimes serrées. | hiphop
+[genre-specific] Lyrics minimalistes en électronique — Phrases courtes
+  répétées, fragments vocaux, ou chant sans paroles. Accent sur le son. |
+  electronic, ambient
+[genre-specific] Forme AAB du blues — 1re ligne chantée, répétée (avec
+  variation), 3e ligne résout. Idéal pour le 12-bar blues. | blues
+[genre-specific] Storytelling concret en country — Détails concrets et
+  spécifiques (noms de lieux, marques, situations). Authenticité et
+  sincérité > sophistication littéraire. | country
+[genre-specific] Techniques vocales metal — Préciser : clean vocals, growl,
+  scream, guttural, falsetto. Suno peut mixer clean et extrême si indiqué.
+  Breakdowns = cris courts. | metal
+
+================================================================================
+SECTION 6 — RÉCAPITULATIF : COMMENT REPRODUIRE UN APPEL HORS DE L'APP
+================================================================================
+
+Étapes pour générer une chanson équivalente avec un autre LLM (par ex. OpenAI,
+Anthropic, Mistral, Llama) en réutilisant ce fichier :
+
+1. PARSER LES PARAMÈTRES UTILISATEUR conformément à la SECTION 1.
+2. CALCULER weirdness et styleInfluence via les formules de la SECTION 3
+   (moyenne des bases genres + mod mood + mod style + variance ±9 + clamp).
+3. CONSTRUIRE LE SYSTEM PROMPT en concaténant dans l'ORDRE de la SECTION 2 :
+   S0 (rôle) → S1 (genres) → S2 (mood) → S3 (writing style) → S4 (tempo)
+   → S5 (langue) → S6 (vocal) → S7 (atmosphère) → S8 (songLength)
+   → S9 (tags Suno cf. 5.5) → S10 (10 règles filtrées cf. 5.7) → S11 (OUTPUT FORMAT)
+   Séparateur : "\n\n". Tirages aléatoires (pickRandom) pour les listes
+   d'instruments/keywords/tags par bloc genre.
+4. APPELER LE LLM avec :
+     - system : le system prompt assemblé
+     - user   : userPrompt brut de l'utilisateur
+     - temperature : 0.8 (modèle "chat") ou non fournie (modèle "reasoner",
+       où system+user doivent être fusionnés en un unique message user)
+     - max_tokens : ≥ 4096
+5. NETTOYER LA RÉPONSE :
+     - Retirer un éventuel encadrement ``` ou ```json.
+     - Parser en JSON.
+     - Valider selon le schéma de la SECTION 4 (Zod-équivalent).
+     - Injecter weirdness et styleInfluence côté serveur ; ne PAS faire
+       confiance à des valeurs renvoyées par le LLM.
+6. UTILISER avec Suno :
+     - title → titre de la chanson
+     - lyrics → champ "Lyrics" (Custom mode)
+     - positivePrompt → champ "Style of Music" (≤200 chars)
+     - negativePrompt → champ "Exclude from Song" (≤120 chars, peut être vide)
+     - sunoSettings.vocalGender → réglage avancé
+     - sunoSettings.weirdness, styleInfluence → réglages avancés (sliders 0..100)
+
+================================================================================
+SECTION 7 — BONUS : REPRODUIRE LE STYLE D'UN ARTISTE OU D'UNE MUSIQUE CONNU(E)
+================================================================================
+
+Objectif : à partir d'un simple nom (artiste, groupe, ou titre de chanson),
+produire UNIQUEMENT `positivePrompt`, `negativePrompt` et `sunoSettings`
+(weirdness, styleInfluence, vocalGender). PAS de lyrics, PAS de title.
+
+RÈGLE D'OR — ANTI-COPYRIGHT (NON NÉGOCIABLE) :
+  Le `positivePrompt` et le `negativePrompt` envoyés à Suno NE DOIVENT
+  JAMAIS contenir :
+    - un nom d'artiste, de groupe, de label
+    - un titre d'album ou de chanson
+    - un nom de producteur identifiable
+    - une formulation du type "in the style of X", "sounds like Y",
+      "à la manière de Z", "inspired by W"
+  Suno rejette ou dégrade ces prompts. On décrit UNIQUEMENT le SON
+  (descripteurs sonores, instrumentation, production, époque, ambiance).
+
+--------------------------------------------------------------------------------
+7.1 — MÉTHODE EN 6 ÉTAPES
+--------------------------------------------------------------------------------
+
+ÉTAPE 1 — Identification (recherche d'informations précises)
+  Rechercher activement (web search, base de connaissances musicale, fiches
+  d'album, interviews, reviews) les caractéristiques sonores de la cible :
+    a) Genre principal + sous-genre(s) — ne pas se contenter d'une étiquette
+       large : "indie rock" → "dream-pop / shoegaze hybrid" si pertinent.
+    b) Époque / décennie de production (ex. "late-90s lo-fi", "early-2010s
+       maximalist pop", "modern 2020s hyperpop").
+    c) Tempo approximatif (BPM) du morceau ou tempo moyen de l'artiste.
+    d) Tonalité (majeure/mineure) si connue, et caractère harmonique
+       (modal, blues, jazz extensions, drone…).
+    e) Instrumentation clé (3 à 6 instruments emblématiques).
+    f) Caractéristiques de production : grain de mix (sec/réverb, large/étroit),
+       compression, lo-fi vs hi-fi, analog warmth vs digital sheen,
+       saturation, sidechain, mixage centré voix vs immersif, etc.
+    g) Caractéristiques vocales : timbre (warm/airy/raspy/nasal/breathy),
+       registre (low/mid/high), texture (clean/distorted/whispered/
+       belted/falsetto), traitement (dry/heavy reverb/autotuned/doubled/
+       layered harmonies), genre vocal (Male/Female/Non-binary → mapper
+       à Male ou Female).
+    h) Rythmique et groove (straight, swung, half-time, dembow, four-on-the-floor,
+       breakbeat, polyrhythmic, motorik…).
+    i) Ambiance / mood dominant + adjectifs émotionnels (dreamy, melancholic,
+       euphoric, menacing, nostalgic, ironic…).
+    j) Si une CHANSON précise est donnée : privilégier ses caractéristiques
+       spécifiques (BPM, structure, instrumentation, ton) au profil moyen de
+       l'artiste. Sinon, prendre le centre de gravité stylistique de l'artiste.
+
+  IMPORTANT : si l'information n'est pas vérifiable, choisir les descripteurs
+  les plus génériques du genre plutôt que d'inventer un détail spécifique
+  (anti-hallucination).
+
+ÉTAPE 2 — Mapping vers le vocabulaire interne
+  Traduire les caractéristiques trouvées vers les ensembles connus :
+    - Genre → un id de la SECTION 5.1 (et un secondaire si fusion).
+    - Mood → un id de la SECTION 5.2.
+    - Atmosphère culturelle → un id de la SECTION 5.4 si pertinent
+      (sinon "western" par défaut).
+    - Vocal style → catégorie (Male/Female + soft/strong/raspy/clean/etc.).
+    - Tempo → bucket de la SECTION 2/S4 (Very slow / Slow / Medium /
+      Fast / Very fast).
+  Ce mapping sert UNIQUEMENT à calculer les réglages et à puiser dans
+  les `promptKeywords` / `sunoTags` / `keyInstruments` des données internes.
+
+ÉTAPE 3 — Construction du positivePrompt (anglais, ≤ 200 caractères)
+  Ordre des descripteurs (le 1er a le plus de poids — cf. règle
+  prompt-word-order de la SECTION 5.7) :
+    1. Genre + sous-genre              (ex. "dream-pop shoegaze")
+    2. Époque / production             (ex. "late-90s lo-fi production")
+    3. 2-3 instruments emblématiques   (ex. "reverbed jangly guitars,
+                                              analog synth pads")
+    4. Voix (1 descripteur compact)    (ex. "breathy female vocals")
+    5. Tempo + groove                  (ex. "mid-tempo, hazy half-time
+                                              drums, ~95 BPM")
+    6. Mood / ambiance (1-2 adjectifs) (ex. "melancholic, nostalgic")
+
+  Séparateur : virgules. Pas de phrases. Pas de "in the style of".
+  Pas de noms propres. Tout en minuscules sauf abréviations.
+
+ÉTAPE 4 — Construction du negativePrompt (anglais, ≤ 120 caractères, ≤ 5 items)
+  Lister UNIQUEMENT ce qui pourrait apparaître par défaut et qui trahirait
+  la cible. Chaque item préfixé par "no". Sélectionner parmi :
+    - traits typiques du genre opposé (ex. cible folk → "no 808, no autotune")
+    - défauts de production indésirables (ex. "no heavy distortion",
+      "no muddy mix")
+    - timbres vocaux à exclure (ex. "no shouting", "no operatic vocals")
+    - tropes de genres voisins mais hors-cible (ex. cible synthwave →
+      "no acoustic guitar", "no country fiddle")
+  Si rien d'évident à exclure : laisser une chaîne vide.
+
+ÉTAPE 5 — Calcul des sunoSettings
+  a) vocalGender ∈ {"Male", "Female"} — déterminé par le timbre dominant
+     de la cible. Si voix non-binaire/ambigüe : choisir le timbre le plus
+     fréquent ; sinon "Female" par défaut pour les voix douces et "Male"
+     pour les voix basses/agressives.
+  b) weirdness (0..100) — degré d'expérimentation perçu :
+       0-20  : pop/rock mainstream très conventionnel
+       20-40 : production polie avec une légère couleur (indie, neo-soul)
+       40-60 : alternatif marqué, fusions clairement audibles
+       60-80 : avant-garde accessible (math-rock, hyperpop, IDM, noise-pop)
+       80-100: expérimental radical (musique concrète, noise, free improv)
+     Si une chanson précise est donnée : se baser sur cette chanson, pas
+     sur la moyenne de l'artiste.
+  c) styleInfluence (0..100) — degré d'attachement aux codes du genre :
+       0-20  : très libre, le genre est à peine reconnaissable
+       20-40 : interprétation personnelle marquée
+       40-60 : équilibre (typique des artistes établis)
+       60-80 : très fidèle aux codes du genre
+       80-100: orthodoxe / puriste du genre
+  d) Pour une reproduction fidèle d'une cible précise, viser styleInfluence
+     élevé (≥ 65) et weirdness aligné sur l'expérimentation perçue.
+  e) Ajouter une variance ±5 pour éviter une sortie trop déterministe
+     (sauf si l'utilisateur demande "le plus fidèle possible" → pas de variance).
+
+ÉTAPE 6 — Validation finale (checklist automatique)
+  Avant de renvoyer le JSON :
+    [ ] positivePrompt ≤ 200 caractères
+    [ ] negativePrompt ≤ 120 caractères, ≤ 5 items, chacun préfixé par "no"
+    [ ] AUCUN nom propre d'artiste/groupe/titre/album/producteur/label
+    [ ] AUCUNE formulation "in the style of / like / inspired by / à la
+        manière de" ni équivalent traduit
+    [ ] Tous les descripteurs en anglais
+    [ ] weirdness, styleInfluence ∈ [0, 100], entiers
+    [ ] vocalGender ∈ {"Male", "Female"}
+  Si une seule case échoue : régénérer la sortie.
+
+--------------------------------------------------------------------------------
+7.2 — FORMAT DE SORTIE JSON (mode "style-only")
+--------------------------------------------------------------------------------
+
+{
+  "positivePrompt": "string (≤200 chars, English, no proper nouns)",
+  "negativePrompt": "string (≤120 chars, English, items prefixed by 'no', or empty)",
+  "sunoSettings": {
+    "vocalGender": "Male" | "Female",
+    "weirdness": 0..100,
+    "styleInfluence": 0..100
+  }
+}
+
+Rien d'autre. Pas de `title`, pas de `lyrics`, pas de champ d'explication.
+Le LLM peut produire un raisonnement interne mais NE doit retourner que
+ce JSON, sans encadrement markdown.
+
+--------------------------------------------------------------------------------
+7.3 — EXEMPLES (illustratifs ; les cibles sont anonymisées dans la sortie)
+--------------------------------------------------------------------------------
+
+Exemple A — Cible : groupe de dream-pop féminin des années 90, chanson lente
+{
+  "positivePrompt": "dream-pop shoegaze, 90s lo-fi production, reverbed jangly guitars, analog synth pads, breathy female vocals, mid-tempo 90 BPM, hazy nostalgic",
+  "negativePrompt": "no autotune, no 808 bass, no heavy distortion, no shouting",
+  "sunoSettings": { "vocalGender": "Female", "weirdness": 35, "styleInfluence": 75 }
+}
+
+Exemple B — Cible : rappeur masculin trap moderne, morceau énergique
+{
+  "positivePrompt": "modern trap hip-hop, hard-hitting 808 bass, crisp hi-hat rolls, dark minor piano loop, aggressive male vocals with light autotune, ~140 BPM half-time",
+  "negativePrompt": "no acoustic guitar, no live drums, no clean vocals",
+  "sunoSettings": { "vocalGender": "Male", "weirdness": 25, "styleInfluence": 80 }
+}
+
+Exemple C — Cible : chanteuse soul néo-classique, ballade
+{
+  "positivePrompt": "neo-soul ballad, warm analog production, fender rhodes, upright bass, brushed drums, lush string section, soulful raspy female vocals, slow 70 BPM",
+  "negativePrompt": "no synth lead, no electronic drums, no autotune",
+  "sunoSettings": { "vocalGender": "Female", "weirdness": 30, "styleInfluence": 70 }
+}
+
+Exemple D — Cible : projet électronique expérimental, piste instrumentale-like
+{
+  "positivePrompt": "experimental electronic, granular textures, glitch percussion, deep sub bass, ambient pads, sparse whispered vocals, 100 BPM broken beat, dystopian",
+  "negativePrompt": "no pop chorus, no acoustic instruments, no country twang",
+  "sunoSettings": { "vocalGender": "Female", "weirdness": 75, "styleInfluence": 60 }
+}
+
+--------------------------------------------------------------------------------
+7.4 — PROMPT SYSTÈME PRÊT À L'EMPLOI (mode "style-only")
+--------------------------------------------------------------------------------
+
+Tu es un expert en analyse stylistique musicale et en prompting Suno AI.
+Tu reçois en entrée un nom d'artiste, de groupe ou de chanson.
+Ta tâche : produire UNIQUEMENT les prompts de style et réglages Suno
+permettant de générer une piste sonorement proche de la cible, SANS écrire
+de paroles ni de titre.
+
+Méthode :
+  1. Recherche des informations factuelles précises sur la cible : genre(s),
+     sous-genre(s), époque de production, tempo, tonalité, instruments
+     emblématiques, caractéristiques de production, timbre et traitement
+     vocal, groove, mood dominant. Si une chanson précise est nommée,
+     privilégier ses caractéristiques à la moyenne de l'artiste.
+  2. Traduis ces caractéristiques en descripteurs sonores anglais génériques.
+  3. Construis le positivePrompt en respectant l'ordre : genre →
+     époque/production → instruments → voix → tempo/groove → mood.
+  4. Construis le negativePrompt avec uniquement ce qui doit être exclu
+     (préfixe "no", 3-5 items max), ou chaîne vide si rien à exclure.
+  5. Calcule weirdness (degré d'expérimentation) et styleInfluence (degré
+     d'orthodoxie au genre), chacun dans [0,100], entiers.
+  6. Détermine vocalGender (Male ou Female) selon le timbre dominant.
+
+Contraintes strictes (rejet en cas de violation) :
+  - positivePrompt ≤ 200 caractères, anglais.
+  - negativePrompt ≤ 120 caractères, anglais, ≤ 5 items préfixés "no".
+  - INTERDICTION ABSOLUE de mentionner un nom d'artiste, de groupe, de
+    chanson, d'album, de label ou de producteur dans les prompts.
+  - INTERDICTION des formulations "in the style of", "sounds like",
+    "inspired by", "à la manière de" et équivalents.
+  - Décrire UNIQUEMENT le son (instruments, production, timbre, époque,
+    ambiance, BPM, groove).
+  - Si une information n'est pas fiable, préférer un descripteur générique
+    plutôt qu'inventer un détail.
+
+Format de sortie (et rien d'autre, pas de markdown) :
+
+{
+  "positivePrompt": "...",
+  "negativePrompt": "...",
+  "sunoSettings": {
+    "vocalGender": "Male" | "Female",
+    "weirdness": 0..100,
+    "styleInfluence": 0..100
+  }
+}
+
+================================================================================
+FIN DU FICHIER
+================================================================================

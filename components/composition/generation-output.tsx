@@ -4,6 +4,10 @@ import { useState } from "react";
 import { Music, Copy, Check, Hash, Type, LayoutList, Clock, Terminal } from "lucide-react";
 import type { SunoSettings } from "@/lib/actions/generation";
 import { AudioLink } from "@/components/composition/audio-upload";
+import {
+  getWeirdnessLabel,
+  getStyleInfluenceLabel,
+} from "@/lib/utils/suno-labels";
 
 const TABS = ["Lyrics", "Réglages", "Prompt IA"] as const;
 type Tab = (typeof TABS)[number];
@@ -197,21 +201,6 @@ function LyricsView({ lyrics }: { lyrics: string }) {
       </div>
     </div>
   );
-}
-
-/** Labels Suno pour le curseur Weirdness. */
-function getWeirdnessLabel(value: number): string {
-  if (value <= 32) return "Safe zone";
-  if (value <= 65) return "Expected results";
-  if (value <= 79) return "Experimental results";
-  return "Chaos mode";
-}
-
-/** Labels Suno pour le curseur Style Influence. */
-function getStyleInfluenceLabel(value: number): string {
-  if (value <= 32) return "Loose";
-  if (value <= 79) return "Moderate";
-  return "Strong";
 }
 
 function SettingsView({

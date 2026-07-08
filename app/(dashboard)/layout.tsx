@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Music, BarChart3 } from "lucide-react";
+import { Music, BarChart3, Wand2 } from "lucide-react";
 import type { Route } from "next";
 
 export default function DashboardLayout({
@@ -21,6 +21,13 @@ export default function DashboardLayout({
             className="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             Composer
+          </Link>
+          <Link
+            href={"/style" as Route}
+            className="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <Wand2 className="inline-block h-4 w-4 mr-1" />
+            Style
           </Link>
           <Link
             href={"/stats" as Route}

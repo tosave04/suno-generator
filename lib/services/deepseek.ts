@@ -3,6 +3,7 @@
  * à l'API DeepSeek pour générer lyrics et prompts.
  */
 
+import type { ZodType, z } from "zod";
 import {
   generationResponseSchema,
   type GenerationResponse,
@@ -53,6 +54,20 @@ export async function callDeepSeek(
   systemPrompt: string,
   userMessage: string
 ): Promise<GenerationResponse> {
+  return callDeepSeekStructured(systemPrompt, userMessage, generationResponseSchema);
+}
+
+/**
+ * Variante générique : appelle DeepSeek et valide la réponse contre un schéma Zod
+ * arbitraire. Permet de réutiliser la même plomberie (auth, parsing, markdown
+ * stripping) pour d'autres types de réponses structurées (ex: réglages Suno
+ * dérivés d'un nom d'artiste).
+ */
+export async function callDeepSeekStructured<S extends ZodType>(
+  systemPrompt: string,
+  userMessage: string,
+  schema: S
+): Promise<z.infer<S>> {
   const { apiKey, model } = getConfig();
   const isReasoner = model.includes("reasoner");
 
@@ -101,14 +116,14 @@ export async function callDeepSeek(
     throw new DeepSeekError("DeepSeek returned an empty response");
   }
 
-  return parseResponse(rawContent);
+  return parseResponse(rawContent, schema);
 }
 
 /**
  * Parse la réponse brute de DeepSeek en objet typé.
  * Gère les cas où le modèle entoure le JSON de markdown.
  */
-function parseResponse(raw: string): GenerationResponse {
+function parseResponse<S extends ZodType>(raw: string, schema: S): z.infer<S> {
   // Nettoyer le markdown éventuel (```json ... ```)
   let cleaned = raw.trim();
   if (cleaned.startsWith("```")) {
@@ -124,7 +139,7 @@ function parseResponse(raw: string): GenerationResponse {
     );
   }
 
-  const result = generationResponseSchema.safeParse(parsed);
+  const result = schema.safeParse(parsed);
   if (!result.success) {
     throw new DeepSeekError(
       `Invalid response structure: ${result.error.issues.map((i) => i.message).join(", ")}`

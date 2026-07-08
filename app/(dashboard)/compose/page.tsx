@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useTransition } from "react";
 import { Sparkles, Loader2, AlertCircle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { GenreSelector } from "@/components/composition/genre-selector";
+import { GenreSelectorLight } from "@/components/composition/genre-selector-light";
 import { MoodSelector } from "@/components/composition/mood-selector";
 import { StyleSelector } from "@/components/composition/style-selector";
 import { TempoSelector } from "@/components/composition/tempo-selector";
@@ -151,7 +151,8 @@ export default function CompositionPage() {
           <section className="space-y-4">
             <h2 className="text-xl font-semibold text-foreground">Composer</h2>
 
-            <GenreSelector value={genres} onChange={setGenres} />
+            {/* <GenreSelector value={genres} onChange={setGenres} /> */}
+            <GenreSelectorLight value={genres} onChange={setGenres} />
             <StyleSelector value={style} onChange={setStyle} />
 
             <div className="space-y-4">

@@ -2,6 +2,14 @@
 
 ---
 
+## v1.7.0 — Style Artiste *(8 juillet 2026)*
+
+Nouvel onglet **Style** : saisir un nom d'artiste ou de morceau pour obtenir instantanément les réglages Suno équivalents (Style of Music, Exclude from Song, Vocal Gender, Weirdness, Style Influence). Le LLM analyse le style sonore via le corpus `llms-full.txt` (Section 7 ajoutée). Refactorisation du client DeepSeek en générique typé (`ZodType`) ; `pickRandom` dans le Context Builder pour varier les prompts générés. Labels Suno extraits en utilitaire partagé. 10 nouveaux tests, 111 au total, lint + build OK.
+
+➜ [Release Notes](releases/RELEASE_NOTES_v1.7.0.md) · [Changelog](changelogs/CHANGELOG_v1.7.0_STYLE_ARTISTE.md)
+
+---
+
 ## v1.6.0 — Audio URL, Stats & UX *(28 mars 2026)*
 
 Refactoring complet de l'upload audio : remplacement du système de fichiers (drag & drop MP3/WAV) par des **liens URL** (Suno, YouTube, youtu.be) avec validation Zod. Centralisation des emojis dans `lib/data/emojis.ts` pour affichage dans les stats (Server Components). Drapeaux de langues via flagcdn.com (compatibles Windows). Coverflow genres amélioré (recentrage auto + shift horizontal global). Favicon SVG. `topN()` supporte les valeurs CSV (multi-genre/langue). Breaking : `audioFile`/`audioFormat` → `audioUrl` (reset BDD). 101 tests, lint + build OK.

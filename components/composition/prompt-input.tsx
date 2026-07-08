@@ -38,7 +38,7 @@ export function PromptInput({ value, onChange, onRandomFill, isRandomizing }: Pr
           }
         }}
         className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent min-h-25"
-        rows={4}
+        rows={6}
         placeholder="Ex: Une ballade mélancolique sur la pluie en automne…"
       />
       <div className="flex items-center justify-between">

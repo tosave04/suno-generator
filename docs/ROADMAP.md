@@ -1,6 +1,6 @@
 # 🗺️ Roadmap — Suno Generator
 
-> **Dernière mise à jour :** 28 mars 2026
+> **Dernière mise à jour :** 8 juillet 2026
 
 ---
 
@@ -21,6 +21,7 @@
 | **v1.4** | Structures & Durée | ✅ Terminée | 4 longueurs de structure par genre, sélecteur 4 options |
 | **v1.5** | Calculateur Suno Settings & Chaos | ✅ Terminée | Calculateur weirdness/styleInfluence, mood Chaos, labels Suno |
 | **v1.6** | Audio URL, Stats & UX | ✅ Terminée | Liens URL audio, emojis stats, drapeaux langues, coverflow UX, favicon |
+| **v1.7** | Style Artiste | ✅ Terminée | Onglet Style — dérivation des réglages Suno depuis un nom d'artiste/morceau |
 
 ---
 
